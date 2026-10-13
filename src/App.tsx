@@ -16,7 +16,7 @@ export const App: React.FC = () => {
   const [activeSimulationId, setActiveSimulationId] = useState<string | null>(null);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
 
-  const { getProposalById } = useAlphaGen();
+  const { getProposalById, apiError, clearApiError } = useAlphaGen();
 
   const handleOpenSimulation = (simId: string) => {
     setActiveSimulationId(simId);
@@ -37,6 +37,22 @@ export const App: React.FC = () => {
         setCurrentTab={setCurrentTab}
         openAgentTelemetry={() => setIsTelemetryOpen(true)}
       />
+
+      {/* API / DB Error Banner */}
+      {apiError && (
+        <div className="bg-rose-950/90 border-b border-rose-800 px-4 py-2 text-xs text-rose-200 flex items-center justify-between font-mono">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{apiError}</span>
+          </div>
+          <button
+            onClick={clearApiError}
+            className="text-rose-400 hover:text-rose-100 underline text-[11px]"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">

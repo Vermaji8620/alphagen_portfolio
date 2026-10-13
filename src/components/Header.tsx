@@ -9,7 +9,8 @@ import {
   RefreshCw,
   Layers,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Database
 } from 'lucide-react';
 import { useAlphaGen } from '../context/AlphaGenContext';
 
@@ -20,7 +21,15 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openAgentTelemetry }) => {
-  const { portfolios, selectedPortfolioId, setSelectedPortfolioId, selectedPortfolio, proposals, resetToDefaults } = useAlphaGen();
+  const {
+    portfolios,
+    selectedPortfolioId,
+    setSelectedPortfolioId,
+    selectedPortfolio,
+    proposals,
+    resetToDefaults,
+    dbConnected
+  } = useAlphaGen();
 
   const pendingCount = proposals.filter(p => p.status === 'pending').length;
 
@@ -35,7 +44,15 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openA
             <span className="bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded text-[10px] border border-slate-700">SIMULATED DATA</span>
           </div>
           <div className="hidden md:flex items-center space-x-4 text-slate-400">
-            <span>EVENT INGESTION: <strong className="text-slate-300">50k evt/s (Simulated Bus)</strong></span>
+            <span className="flex items-center space-x-1.5">
+              <Database className="w-3 h-3 text-cyan-400" />
+              <span>STORAGE: </span>
+              {dbConnected ? (
+                <strong className="text-emerald-400 font-semibold">MongoDB Atlas (Live)</strong>
+              ) : (
+                <strong className="text-amber-400 font-semibold" title="Waiting for MONGODB_URI in .env">MongoDB Atlas (Connecting / Standby)</strong>
+              )}
+            </span>
             <span>REFERENCE FEEDS: <strong className="text-emerald-400">Illustrative Market Data</strong></span>
             <span>SIMULATION ENGINE: <strong className="text-cyan-400">10k Paths (Precomputed Model)</strong></span>
           </div>

@@ -56,36 +56,49 @@ AlphaGen translates real-time financial market signals, multi-factor exposure mo
 - **Framework**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS (dark institutional fintech theme)
 - **Charts**: Recharts (performance areas, sector donuts, factor bars, Monte Carlo percentile line fans)
-- **Icons**: Lucide React
-- **State Management**: React Context + localStorage persistence
+- **Backend API**: Node.js + Express + TypeScript (`src/server/index.ts`)
+- **Database**: MongoDB Atlas (official `mongodb` driver with idempotent seeding)
+- **State Management**: React Context synced with REST API
 
 ---
 
-## Installation & Running the Prototype
+## MongoDB Atlas Configuration
 
-### Prerequisites
-- Node.js (v18+)
-- npm
+1. Log into [MongoDB Atlas](https://cloud.mongodb.com/).
+2. Create or select your cluster, navigate to **Database Access**, and ensure a database user exists.
+3. In **Network Access**, ensure your current IP address (or `0.0.0.0/0` for development) is allowlisted.
+4. Click **Connect** → **Drivers** (Node.js) and copy the connection string.
+5. In the project root, open `.env` (or copy from `.env.example`) and fill in your connection string:
+   ```env
+   PORT=5000
+   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/?retryWrites=true&w=majority
+   DB_NAME=alphagen_db
+   FRONTEND_ORIGIN=http://localhost:5173
+   ```
+6. When the backend starts with `MONGODB_URI` configured, it automatically connects to your Atlas cluster and idempotently seeds initial collections (`portfolios`, `proposals`, `simulations`, `factorExposures`, `sectorExposures`, `auditLogs`) without creating duplicates.
+7. If `MONGODB_URI` is not provided, the API starts gracefully in standby mock mode.
+
+---
+
+## Running the Application
 
 ### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Start Local Development Server
+### 2. Run Both Backend API and Frontend Dev Server Together
 ```bash
-npm run dev
+npm run dev:all
 ```
-Open your browser at `http://localhost:5173`.
+- Express Backend runs on `http://localhost:5000`
+- Vite Frontend runs on `http://localhost:5173` (proxies `/api` to port 5000)
+
+*(Alternatively, run in separate terminals: `npm run server` for the backend, `npm run dev` for the frontend)*
 
 ### 3. Build Production Bundle
 ```bash
 npm run build
-```
-
-### 4. Preview Production Build
-```bash
-npm run preview
 ```
 
 ---
