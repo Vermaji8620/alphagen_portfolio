@@ -26,17 +26,18 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openA
 
   return (
     <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
-      {/* Top tier: Institutional ticker bar & system stats */}
+      {/* Top tier: Institutional prototype ticker bar & simulated cluster telemetry */}
       <div className="border-b border-slate-800/60 px-4 py-1.5 flex items-center justify-between text-xs text-slate-400 bg-slate-950/60 font-mono">
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-slate-300 font-semibold tracking-wide">ALPHAGEN CLUSTER: NOMINAL</span>
+            <span className="text-slate-300 font-semibold tracking-wide">ALPHAGEN PROTOTYPE SANDBOX</span>
+            <span className="bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded text-[10px] border border-slate-700">SIMULATED DATA</span>
           </div>
           <div className="hidden md:flex items-center space-x-4 text-slate-400">
-            <span>KAFKA EVENT INGESTION: <strong className="text-slate-200">50,000 evt/s (p99 38ms)</strong></span>
-            <span>DATA FEEDS: <strong className="text-emerald-400">BLOOMBERG DL / REFINITIV EIKON (ACTIVE)</strong></span>
-            <span>NUMBA MC ENGINE: <strong className="text-cyan-400">10k paths / 118ms</strong></span>
+            <span>EVENT INGESTION: <strong className="text-slate-300">50k evt/s (Simulated Bus)</strong></span>
+            <span>REFERENCE FEEDS: <strong className="text-emerald-400">Illustrative Market Data</strong></span>
+            <span>SIMULATION ENGINE: <strong className="text-cyan-400">10k Paths (Precomputed Model)</strong></span>
           </div>
         </div>
 

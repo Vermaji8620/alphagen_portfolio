@@ -84,8 +84,11 @@ export const AgentTelemetryModal: React.FC<AgentTelemetryModalProps> = ({ onClos
               <Network className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">AlphaGen Agent Orchestration & Kafka Topology</h2>
-              <p className="text-xs text-slate-400 font-mono">Live telemetry from the 11-topic Kafka cluster and Kubernetes agent fleet</p>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-base font-bold text-slate-100">AlphaGen Agent Orchestration & Kafka Topology</h2>
+                <span className="bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.2 rounded text-[10px] font-mono">SIMULATED ARCHITECTURE</span>
+              </div>
+              <p className="text-xs text-slate-400 font-mono">Illustrative architectural model based on the case study event topology (Simulated Telemetry)</p>
             </div>
           </div>
 

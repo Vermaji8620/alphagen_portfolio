@@ -43,8 +43,8 @@ export const FactorRiskScreen: React.FC = () => {
               Factor Risks & Stress Scenario Matrix ({selectedPortfolio.code})
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
-              Rolling 60-day Newey-West standard error corrected factor regression updated every 15 seconds.
-              Automated drift detection flags loadings exceeding 2.0 standard deviations from the 60-day mean.
+              Illustrative rolling 60-day Newey-West standard error corrected factor regression loadings.
+              Automated drift detection flags loadings exceeding 2.0 standard deviations from the 60-day mean (Illustrative Precomputed Model).
             </p>
           </div>
 

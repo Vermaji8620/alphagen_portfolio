@@ -276,10 +276,10 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-slate-200">Current Portfolio Holdings & Positions</h3>
-            <p className="text-xs text-slate-400 font-mono">Live multi-asset valuation enriched with Refinitiv / Bloomberg feeds</p>
+            <p className="text-xs text-slate-400 font-mono">Simulated multi-asset valuation calibrated to case-study sample pricing (Illustrative Data)</p>
           </div>
           <span className="text-xs font-mono text-slate-400 bg-slate-800 px-2.5 py-1 rounded">
-            {selectedPortfolio.holdings.length} Active Positions
+            {selectedPortfolio.holdings.length} Positions (Simulated)
           </span>
         </div>
 

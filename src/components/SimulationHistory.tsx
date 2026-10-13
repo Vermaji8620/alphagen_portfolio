@@ -53,14 +53,14 @@ export const SimulationHistory: React.FC<SimulationHistoryProps> = ({
           <div>
             <div className="flex items-center space-x-2 text-cyan-400 font-mono text-xs uppercase mb-1">
               <Cpu className="w-4 h-4" />
-              <span>Numba-Accelerated Monte Carlo Engine (C-Speed JIT)</span>
+              <span>Precomputed Monte Carlo Simulations (Illustrative Results)</span>
             </div>
             <h2 className="text-xl font-bold text-slate-100">
               Simulation Runs & Correlated Path Distributions
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
-              Generates 10,000 correlated price paths across 400 instruments in sub-120 milliseconds.
-              Models stochastic volatility (Heston), jump-diffusion tail components, and PCA covariance structures.
+              Precomputed benchmark distributions modeling 10,000 correlated price paths across 400 instruments.
+              Illustrates stochastic volatility (Heston), jump-diffusion tail components, and PCA covariance structures.
             </p>
           </div>
 
