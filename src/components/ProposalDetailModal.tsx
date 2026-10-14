@@ -21,6 +21,7 @@ import {
   Key
 } from 'lucide-react';
 import { useAlphaGen } from '../context/AlphaGenContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ProposalDetailModalProps {
   proposal: StrategyProposal;
@@ -34,9 +35,11 @@ export const ProposalDetailModal: React.FC<ProposalDetailModalProps> = ({
   onOpenSimulation
 }) => {
   const { approveProposal, rejectProposal, simulateExecuteProposal, getSimulationById } = useAlphaGen();
+  const { user, hasRole } = useAuth();
   const [reviewNotes, setReviewNotes] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  const isPM = hasRole(['PORTFOLIO_MANAGER']);
   const simulation = getSimulationById(proposal.simulationId);
 
   const handleApprove = () => {
@@ -292,7 +295,13 @@ export const ProposalDetailModal: React.FC<ProposalDetailModalProps> = ({
         <div className="p-6 border-t border-slate-800 bg-slate-900/90 flex flex-wrap items-center justify-between gap-4 sticky bottom-0">
           <div className="text-xs font-mono text-slate-400 flex items-center space-x-2">
             <Info className="w-4 h-4 text-cyan-400" />
-            <span>Segregation of duties: Human PM token required to authorize execution.</span>
+            <span>
+              {isPM ? (
+                <>Authorized as <strong>{user?.name}</strong> (Portfolio Manager)</>
+              ) : (
+                <>Read-Only Mode: Role <strong>{user?.role}</strong> requires Portfolio Manager authorization to execute/approve.</>
+              )}
+            </span>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -303,7 +312,7 @@ export const ProposalDetailModal: React.FC<ProposalDetailModalProps> = ({
               Close
             </button>
 
-            {proposal.status === 'pending' && (
+            {proposal.status === 'pending' && isPM && (
               <>
                 <button
                   onClick={handleReject}
@@ -322,7 +331,7 @@ export const ProposalDetailModal: React.FC<ProposalDetailModalProps> = ({
               </>
             )}
 
-            {proposal.status === 'approved' && (
+            {proposal.status === 'approved' && isPM && (
               <button
                 onClick={handleSimulateExecute}
                 className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 px-5 rounded-lg text-xs flex items-center space-x-1.5 shadow-md shadow-cyan-950/40 transition-all"

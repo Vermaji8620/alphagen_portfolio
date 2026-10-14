@@ -18,6 +18,7 @@ import {
   INITIAL_SECTORS,
   INITIAL_AUDIT_LOGS
 } from '../data/mockData';
+import { SEEDED_USERS } from './users';
 
 dotenv.config();
 
@@ -52,12 +53,19 @@ export function getDatabase(): Db | null {
 }
 
 export async function seedDatabaseIfEmpty(db: Db): Promise<void> {
+  const usersCol = db.collection('users');
   const portfoliosCol = db.collection('portfolios');
   const proposalsCol = db.collection('proposals');
   const simulationsCol = db.collection('simulations');
   const factorsCol = db.collection('factorExposures');
   const sectorsCol = db.collection('sectorExposures');
   const auditLogsCol = db.collection('auditLogs');
+
+  const userCount = await usersCol.countDocuments();
+  if (userCount === 0) {
+    console.log('[MongoDB Seed] Seeding default institutional users...');
+    await usersCol.insertMany(SEEDED_USERS.map(u => ({ ...u })));
+  }
 
   const portfolioCount = await portfoliosCol.countDocuments();
   if (portfolioCount === 0) {
@@ -105,6 +113,7 @@ export async function seedDatabaseIfEmpty(db: Db): Promise<void> {
 }
 
 export async function resetDatabase(db: Db): Promise<void> {
+  await db.collection('users').deleteMany({});
   await db.collection('portfolios').deleteMany({});
   await db.collection('proposals').deleteMany({});
   await db.collection('simulations').deleteMany({});

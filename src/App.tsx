@@ -6,17 +6,34 @@ import { ProposalDetailModal } from './components/ProposalDetailModal';
 import { FactorRiskScreen } from './components/FactorRiskScreen';
 import { SimulationHistory } from './components/SimulationHistory';
 import { AgentTelemetryModal } from './components/AgentTelemetryModal';
+import { LoginView } from './components/LoginView';
 import { StrategyProposal } from './types/alphagen';
 import { useAlphaGen } from './context/AlphaGenContext';
+import { useAuth } from './context/AuthContext';
 import { AlertCircle, ShieldCheck } from 'lucide-react';
 
 export const App: React.FC = () => {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<'overview' | 'strategies' | 'risk' | 'simulations'>('overview');
   const [selectedProposal, setSelectedProposal] = useState<StrategyProposal | null>(null);
   const [activeSimulationId, setActiveSimulationId] = useState<string | null>(null);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
 
   const { getProposalById, apiError, clearApiError } = useAlphaGen();
+
+  // Authentication Guard: Display Login screen if user is unauthenticated
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-mono text-xs text-slate-400 space-y-3">
+        <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+        <span>Verifying Institutional Credentials...</span>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   const handleOpenSimulation = (simId: string) => {
     setActiveSimulationId(simId);

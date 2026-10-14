@@ -16,6 +16,7 @@ import {
   INITIAL_AUDIT_LOGS
 } from '../data/mockData';
 import { api } from '../services/api';
+import { useAuth } from './AuthContext';
 
 interface AlphaGenContextType {
   portfolios: Portfolio[];
@@ -31,6 +32,7 @@ interface AlphaGenContextType {
   dbConnected: boolean;
   apiError: string | null;
   clearApiError: () => void;
+  reloadAllData: () => Promise<void>;
   
   // Actions
   approveProposal: (id: string, notes?: string) => Promise<void>;
@@ -49,6 +51,7 @@ const STORAGE_KEY_PORTFOLIO_ID = 'alphagen_ui_selected_portfolio_v1';
 const AlphaGenContext = createContext<AlphaGenContextType | undefined>(undefined);
 
 export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
   const [portfolios, setPortfolios] = useState<Portfolio[]>(INITIAL_PORTFOLIOS);
   
   const [selectedPortfolioId, setSelectedPortfolioIdState] = useState<string>(() => {
@@ -66,48 +69,52 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [dbConnected, setDbConnected] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Fetch initial data from backend API upon mounting
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      try {
-        // Check DB Status
-        const status = await api.getStatus().catch(() => ({ connected: false, message: 'API unreachable' }));
-        setDbConnected(status.connected);
-
-        // Fetch all domain datasets in parallel
-        const [
-          fetchedPortfolios,
-          fetchedProposals,
-          fetchedSimulations,
-          fetchedFactors,
-          fetchedSectors,
-          fetchedAudit
-        ] = await Promise.all([
-          api.getPortfolios().catch(() => INITIAL_PORTFOLIOS),
-          api.getProposals().catch(() => INITIAL_PROPOSALS),
-          api.getSimulations().catch(() => INITIAL_SIMULATIONS),
-          api.getFactors().catch(() => INITIAL_FACTOR_EXPOSURES),
-          api.getSectors().catch(() => INITIAL_SECTORS),
-          api.getAuditLogs().catch(() => INITIAL_AUDIT_LOGS)
-        ]);
-
-        if (fetchedPortfolios.length > 0) setPortfolios(fetchedPortfolios);
-        if (fetchedProposals.length > 0) setProposals(fetchedProposals);
-        if (fetchedSimulations.length > 0) setSimulations(fetchedSimulations);
-        if (Object.keys(fetchedFactors).length > 0) setFactorExposures(fetchedFactors);
-        if (Object.keys(fetchedSectors).length > 0) setSectorExposures(fetchedSectors);
-        if (fetchedAudit.length > 0) setAuditLogs(fetchedAudit);
-      } catch (err: any) {
-        console.error('Failed to load data from backend:', err);
-        setApiError('Unable to connect to backend service. Using fallback data.');
-      } finally {
-        setIsLoading(false);
-      }
+  const loadData = async () => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
     }
+    setIsLoading(true);
+    try {
+      // Check DB Status
+      const status = await api.getStatus().catch(() => ({ connected: false, message: 'API unreachable' }));
+      setDbConnected(status.connected);
 
+      // Fetch all domain datasets in parallel
+      const [
+        fetchedPortfolios,
+        fetchedProposals,
+        fetchedSimulations,
+        fetchedFactors,
+        fetchedSectors,
+        fetchedAudit
+      ] = await Promise.all([
+        api.getPortfolios().catch(() => INITIAL_PORTFOLIOS),
+        api.getProposals().catch(() => INITIAL_PROPOSALS),
+        api.getSimulations().catch(() => INITIAL_SIMULATIONS),
+        api.getFactors().catch(() => INITIAL_FACTOR_EXPOSURES),
+        api.getSectors().catch(() => INITIAL_SECTORS),
+        api.getAuditLogs().catch(() => INITIAL_AUDIT_LOGS)
+      ]);
+
+      if (fetchedPortfolios.length > 0) setPortfolios(fetchedPortfolios);
+      if (fetchedProposals.length > 0) setProposals(fetchedProposals);
+      if (fetchedSimulations.length > 0) setSimulations(fetchedSimulations);
+      if (Object.keys(fetchedFactors).length > 0) setFactorExposures(fetchedFactors);
+      if (Object.keys(fetchedSectors).length > 0) setSectorExposures(fetchedSectors);
+      if (fetchedAudit.length > 0) setAuditLogs(fetchedAudit);
+    } catch (err: any) {
+      console.error('Failed to load data from backend:', err);
+      setApiError('Unable to connect to backend service. Using fallback data.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch initial data from backend API whenever authenticated state changes
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   const clearApiError = () => setApiError(null);
 
@@ -123,28 +130,22 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const existing = proposals.find(p => p.id === id);
     const code = existing ? existing.code : id;
     const portCode = existing ? existing.portfolioCode : selectedPortfolio.code;
-
-    const decisionMetadata: StrategyProposal['decisionMetadata'] = {
-      decidedAt: now,
-      decidedBy: 'Portfolio Manager (Human Token #PM-8921)',
-      decision: 'APPROVED',
-      notes: notes || 'Proposal approved by human portfolio manager following multi-factor & Monte Carlo risk verification.'
-    };
+    const actorName = user ? `${user.name} (${user.role.replace('_', ' ')})` : 'Portfolio Manager (Human Token #PM-8921)';
 
     const newLog: AuditActivityItem = {
       id: `log-${Date.now()}`,
       timestamp: now,
       type: 'PROPOSAL_APPROVED',
       portfolioCode: portCode,
-      summary: `Proposal ${code} approved by Human Portfolio Manager`,
+      summary: `Proposal ${code} approved by ${user?.name || 'Human Portfolio Manager'}`,
       details: notes || 'Verified segregation-of-duties mandate compliance. Ready for simulated order generation.',
-      actor: 'Portfolio Manager (Human)',
+      actor: actorName as any,
       relatedProposalId: id
     };
 
     try {
-      // Persist to backend API (MongoDB)
-      const updated = await api.updateProposal(id, 'approved', decisionMetadata);
+      // Persist to backend API (MongoDB via Express JWT)
+      const updated = await api.updateProposal(id, 'approved', notes);
       await api.addAuditLog(newLog).catch(() => {});
 
       // Synchronize shared React state on success
@@ -162,28 +163,22 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const existing = proposals.find(p => p.id === id);
     const code = existing ? existing.code : id;
     const portCode = existing ? existing.portfolioCode : selectedPortfolio.code;
-
-    const decisionMetadata: StrategyProposal['decisionMetadata'] = {
-      decidedAt: now,
-      decidedBy: 'Portfolio Manager (Human Token #PM-8921)',
-      decision: 'REJECTED',
-      notes: notes || 'Proposal rejected by portfolio manager discretion.'
-    };
+    const actorName = user ? `${user.name} (${user.role.replace('_', ' ')})` : 'Portfolio Manager (Human Token #PM-8921)';
 
     const newLog: AuditActivityItem = {
       id: `log-${Date.now()}`,
       timestamp: now,
       type: 'PROPOSAL_REJECTED',
       portfolioCode: portCode,
-      summary: `Proposal ${code} rejected by Human Portfolio Manager`,
+      summary: `Proposal ${code} rejected by ${user?.name || 'Human Portfolio Manager'}`,
       details: notes || 'Discretionary PM veto. Execution halted in prototype sandbox.',
-      actor: 'Portfolio Manager (Human)',
+      actor: actorName as any,
       relatedProposalId: id
     };
 
     try {
-      // Persist to backend API (MongoDB)
-      const updated = await api.updateProposal(id, 'rejected', decisionMetadata);
+      // Persist to backend API (MongoDB via Express JWT)
+      const updated = await api.updateProposal(id, 'rejected', notes);
       await api.addAuditLog(newLog).catch(() => {});
 
       // Synchronize shared React state on success
@@ -221,8 +216,8 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     try {
-      // Persist to backend API (MongoDB)
-      const updated = await api.updateProposal(id, 'simulated_executed', decisionMetadata);
+      // Persist to backend API (MongoDB via Express JWT)
+      const updated = await api.updateProposal(id, 'simulated_executed', decisionMetadata.notes);
       await api.addAuditLog(newLog).catch(() => {});
 
       // Synchronize shared React state on success
@@ -272,6 +267,7 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         dbConnected,
         apiError,
         clearApiError,
+        reloadAllData: loadData,
         approveProposal,
         rejectProposal,
         simulateExecuteProposal,

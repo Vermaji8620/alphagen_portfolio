@@ -22,6 +22,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAlphaGen } from '../context/AlphaGenContext';
+import { useAuth } from '../context/AuthContext';
 
 interface StrategyReviewProps {
   onSelectProposal: (proposal: StrategyProposal) => void;
@@ -33,6 +34,8 @@ export const StrategyReview: React.FC<StrategyReviewProps> = ({
   onOpenSimulation
 }) => {
   const { proposals, selectedPortfolio, approveProposal, rejectProposal, simulateExecuteProposal } = useAlphaGen();
+  const { hasRole } = useAuth();
+  const isPM = hasRole(['PORTFOLIO_MANAGER']);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -127,7 +130,25 @@ export const StrategyReview: React.FC<StrategyReviewProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span className="font-medium">{actionFeedback}</span>
           </div>
-          <span className="text-[11px] font-mono text-emerald-400">Persisted to localStorage & Audit Chain</span>
+          <span className="text-[11px] font-mono text-emerald-400">Persisted to MongoDB & Audit Chain</span>
+        </div>
+      )}
+
+      {/* Role Permission Context Banner */}
+      {!isPM && (
+        <div className="bg-slate-900/90 border border-amber-500/40 rounded-xl p-3.5 flex items-start space-x-3 text-xs">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="text-slate-200 font-semibold font-mono flex items-center space-x-2">
+              <span>Read-Only Research Access Mode</span>
+              <span className="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/60 px-1.5 py-0.2 rounded">
+                Institutional Segregation of Duties
+              </span>
+            </div>
+            <p className="text-slate-400 leading-relaxed font-sans">
+              You are signed in with read-only permissions. You can inspect strategy theses, multi-factor Z-scores, and Monte Carlo distributions, but <strong>only a Portfolio Manager can authorize trade proposals or dispatch simulated execution slicing</strong>. Switch to <strong>Elena Rostova (PM)</strong> to test trade approval workflows.
+            </p>
+          </div>
         </div>
       )}
 
@@ -303,7 +324,7 @@ export const StrategyReview: React.FC<StrategyReviewProps> = ({
 
                     {/* Action buttons */}
                     <div className="flex items-center space-x-2 pt-1" onClick={e => e.stopPropagation()}>
-                      {proposal.status === 'pending' && (
+                      {proposal.status === 'pending' && isPM && (
                         <>
                           <button
                             onClick={(e) => handleQuickApprove(e, proposal)}
@@ -322,7 +343,16 @@ export const StrategyReview: React.FC<StrategyReviewProps> = ({
                         </>
                       )}
 
-                      {proposal.status === 'approved' && (
+                      {proposal.status === 'pending' && !isPM && (
+                        <button
+                          onClick={() => onSelectProposal(proposal)}
+                          className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-1.5 px-3 rounded text-xs flex items-center justify-center space-x-1"
+                        >
+                          <span>Review Proposal (Read-Only)</span>
+                        </button>
+                      )}
+
+                      {proposal.status === 'approved' && isPM && (
                         <button
                           onClick={(e) => handleQuickExecute(e, proposal)}
                           className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-1.5 px-3 rounded text-xs flex items-center justify-center space-x-1 shadow-sm transition-all"
@@ -332,12 +362,12 @@ export const StrategyReview: React.FC<StrategyReviewProps> = ({
                         </button>
                       )}
 
-                      {(proposal.status === 'rejected' || proposal.status === 'simulated_executed') && (
+                      {(proposal.status === 'rejected' || proposal.status === 'simulated_executed' || (proposal.status === 'approved' && !isPM)) && (
                         <button
                           onClick={() => onSelectProposal(proposal)}
                           className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-1.5 px-3 rounded text-xs flex items-center justify-center space-x-1"
                         >
-                          <span>View Audit Trail</span>
+                          <span>View Details</span>
                         </button>
                       )}
                     </div>

@@ -1,3 +1,14 @@
+export type UserRole = 'PORTFOLIO_MANAGER' | 'RISK_ANALYST' | 'QUANT_RESEARCHER';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  title: string;
+  department: string;
+}
+
 export type MarketRegime = 'trending' | 'mean_reverting' | 'volatility_driven' | 'liquidity_strained';
 
 export type StrategyCategory = 'momentum' | 'mean_reversion' | 'volatility_arbitrage' | 'carry';

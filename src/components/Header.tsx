@@ -10,9 +10,11 @@ import {
   Layers,
   ChevronDown,
   ExternalLink,
-  Database
+  Database,
+  LogOut
 } from 'lucide-react';
 import { useAlphaGen } from '../context/AlphaGenContext';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   currentTab: 'overview' | 'strategies' | 'risk' | 'simulations';
@@ -21,6 +23,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openAgentTelemetry }) => {
+  const { user, logout } = useAuth();
   const {
     portfolios,
     selectedPortfolioId,
@@ -157,8 +160,8 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openA
           </button>
         </nav>
 
-        {/* Portfolio Selector Dropdown */}
-        <div className="flex items-center space-x-2">
+        {/* Portfolio Selector Dropdown & User Profile / Logout */}
+        <div className="flex items-center space-x-3">
           <div className="text-right hidden xl:block">
             <div className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">Active Mandate</div>
             <div className="text-xs font-semibold text-slate-200">{selectedPortfolio.name}</div>
@@ -177,6 +180,36 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openA
             </select>
             <ChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-2.5" />
           </div>
+
+          {/* User Session & Logout */}
+          {user && (
+            <div className="flex items-center pl-2 border-l border-slate-800 space-x-2.5">
+              <div className="hidden sm:block text-right">
+                <div className="text-xs font-semibold text-slate-100 flex items-center justify-end space-x-1">
+                  <span>{user.name}</span>
+                </div>
+                <div className="flex items-center justify-end space-x-1.5 mt-0.5">
+                  <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                    user.role === 'PORTFOLIO_MANAGER'
+                      ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60'
+                      : user.role === 'RISK_ANALYST'
+                      ? 'bg-amber-950/80 text-amber-400 border-amber-800/60'
+                      : 'bg-purple-950/80 text-purple-400 border-purple-800/60'
+                  }`}>
+                    {user.role === 'PORTFOLIO_MANAGER' ? 'PM (FULL EXECUTION)' : user.role === 'RISK_ANALYST' ? 'RISK (READ-ONLY)' : 'QUANT (READ-ONLY)'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={logout}
+                title="Log out of institutional terminal"
+                className="p-2 rounded-lg bg-slate-800 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-800 text-slate-400 hover:text-rose-300 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
