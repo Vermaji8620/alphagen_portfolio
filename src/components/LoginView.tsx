@@ -1,45 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
 import {
-  ShieldCheck,
   Lock,
   Mail,
-  ArrowRight,
-  UserCheck,
-  CheckCircle2,
   AlertCircle,
-  Cpu
+  Loader2
 } from 'lucide-react';
-import { UserRole } from '../types/alphagen';
-
-interface SeededAccount {
-  name: string;
-  email: string;
-  role: string;
-  title: string;
-  department: string;
-  defaultPassword: string;
-}
 
 export const LoginView: React.FC = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('pm@alphagen.internal');
-  const [password, setPassword] = useState('alphagen2024');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [seededAccounts, setSeededAccounts] = useState<SeededAccount[]>([]);
-
-  useEffect(() => {
-    api.getSeededAccounts().then(accounts => {
-      if (accounts.length > 0) {
-        setSeededAccounts(accounts);
-      }
-    }).catch(() => {});
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return;
+
     setError(null);
     setSubmitting(true);
     try {
@@ -48,25 +26,6 @@ export const LoginView: React.FC = () => {
       setError(err.message || 'Login failed. Please verify credentials.');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleSelectAccount = (acc: SeededAccount) => {
-    setEmail(acc.email);
-    setPassword(acc.defaultPassword);
-    setError(null);
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'PORTFOLIO_MANAGER':
-        return <span className="bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded text-[10px] font-mono">PORTFOLIO MANAGER</span>;
-      case 'RISK_ANALYST':
-        return <span className="bg-rose-950/80 text-rose-400 border border-rose-800/60 px-2 py-0.5 rounded text-[10px] font-mono">RISK ANALYST</span>;
-      case 'QUANT_RESEARCHER':
-        return <span className="bg-purple-950/80 text-purple-400 border border-purple-800/60 px-2 py-0.5 rounded text-[10px] font-mono">QUANT RESEARCHER</span>;
-      default:
-        return null;
     }
   };
 
@@ -106,7 +65,7 @@ export const LoginView: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="pm@alphagen.internal"
+                  placeholder="Enter the email"
                   className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-600 font-mono focus:outline-none transition-colors"
                 />
               </div>
@@ -129,73 +88,19 @@ export const LoginView: React.FC = () => {
 
             <button
               type="submit"
-              disabled={submitting}
-              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg text-xs shadow-lg shadow-cyan-950/50 transition-all flex items-center justify-center space-x-2"
+              disabled={submitting || !email || !password}
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-4 rounded-lg text-xs shadow-lg shadow-cyan-950/50 transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <span>{submitting ? 'Verifying Credentials...' : 'Authenticate & Enter Terminal'}</span>
-              <ArrowRight className="w-4 h-4" />
+              {submitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Verifying Credentials...</span>
+                </>
+              ) : (
+                <span>Login</span>
+              )}
             </button>
           </form>
-
-          {/* Quick-Fill Seeded Accounts for Demo */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-              <span className="flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Predefined Institutional Accounts:</span>
-              </span>
-              <span className="text-[10px] text-slate-500">Click to autofill</span>
-            </div>
-
-            <div className="space-y-2">
-              {(seededAccounts.length > 0 ? seededAccounts : [
-                {
-                  name: 'Elena Rostova',
-                  email: 'pm@alphagen.internal',
-                  role: 'PORTFOLIO_MANAGER',
-                  title: 'Senior Portfolio Manager (Alpha Mandates)',
-                  department: 'Quantitative Equity Strategies',
-                  defaultPassword: 'alphagen2024'
-                },
-                {
-                  name: 'Marcus Vance',
-                  email: 'risk@alphagen.internal',
-                  role: 'RISK_ANALYST',
-                  title: 'Head of Market Risk & Stress Testing',
-                  department: 'Institutional Risk Oversight',
-                  defaultPassword: 'alphagen2024'
-                },
-                {
-                  name: 'Dr. Liam Thorne',
-                  email: 'quant@alphagen.internal',
-                  role: 'QUANT_RESEARCHER',
-                  title: 'Principal Quantitative Researcher',
-                  department: 'Multi-Asset Model Development',
-                  defaultPassword: 'alphagen2024'
-                }
-              ]).map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => handleSelectAccount(acc)}
-                  className={`w-full text-left p-2.5 rounded-lg border text-xs font-sans transition-all flex items-center justify-between ${
-                    email === acc.email
-                      ? 'bg-slate-800/80 border-cyan-500/60 shadow-sm'
-                      : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-800/50 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-200">{acc.name}</span>
-                      {getRoleBadge(acc.role)}
-                    </div>
-                    <div className="text-[11px] text-slate-400 font-mono">{acc.email}</div>
-                  </div>
-                  <CheckCircle2 className={`w-4 h-4 ${email === acc.email ? 'text-cyan-400' : 'text-slate-700'}`} />
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Security & Token Disclosure */}
