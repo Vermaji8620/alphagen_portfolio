@@ -1456,11 +1456,11 @@ async function startServer() {
 if (!process.env.VERCEL) {
   startServer();
 }
-var server_default = app;
+var index_default = app;
 
-// api/index.ts
+// src/server/serverless.ts
 function handler(req, res) {
-  return server_default(req, res);
+  return index_default(req, res);
 }
 export {
   handler as default
