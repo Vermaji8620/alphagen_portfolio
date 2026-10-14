@@ -6,6 +6,9 @@ try {
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { connectToDatabase, getDatabase, resetDatabase } from './db';
 import {
   INITIAL_PORTFOLIOS,
@@ -20,12 +23,36 @@ import { requireAuth, AuthenticatedRequest } from './middleware/auth';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
 
-app.use(cors({ origin: FRONTEND_ORIGIN }));
+// When served from a single origin/service, permissive or custom origin CORS
+if (FRONTEND_ORIGIN) {
+  app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+} else {
+  app.use(cors());
+}
+
 app.use(express.json());
+
+// On-demand DB connection and path normalization for serverless / Vercel cold starts
+app.use(async (req: Request, _res: Response, next) => {
+  if (process.env.VERCEL && !req.url.startsWith('/api')) {
+    req.url = '/api' + req.url;
+  }
+  if (!getDatabase() && process.env.MONGODB_URI) {
+    try {
+      await connectToDatabase();
+    } catch {
+      // Gracefully falls back if DB connection encounters issues
+    }
+  }
+  next();
+});
 
 app.use('/api/auth', authRouter);
 
@@ -287,7 +314,25 @@ app.post('/api/reset', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// Start Server & Connect to DB
+// ---------------------------------------------------------------------
+// Single-Service Static Asset & SPA Serving (Production)
+// ---------------------------------------------------------------------
+const distPath = path.resolve(__dirname, '../../dist');
+
+if (fs.existsSync(distPath)) {
+  console.log(`[AlphaGen Server] Single-service mode active: serving static frontend from ${distPath}`);
+  app.use(express.static(distPath));
+
+  // Client-side SPA routing fallback: send index.html for non-API GET requests
+  app.use((req: Request, res: Response, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(distPath, 'index.html'));
+    }
+    next();
+  });
+}
+
+// Start Server & Connect to DB (when running standalone/local, not as a serverless function)
 async function startServer() {
   try {
     await connectToDatabase();
@@ -305,4 +350,9 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export { app };
+export default app;

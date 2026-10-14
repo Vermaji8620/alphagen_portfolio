@@ -37,7 +37,7 @@ export async function connectToDatabase(): Promise<{ db: Db; isConnected: boolea
     return { db: dbInstance, isConnected: true };
   }
 
-  client = new MongoClient(uri);
+  client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
   await client.connect();
   dbInstance = client.db(dbName);
   console.log(`[MongoDB] Connected to database: ${dbName}`);

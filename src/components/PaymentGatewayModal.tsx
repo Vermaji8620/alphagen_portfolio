@@ -83,7 +83,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-sm tracking-tight">AlphaGen Settlement Gateway</span>
-                <span className="bg-white/20 text-white px-1.5 py-0.2 rounded text-[10px] font-mono font-medium">SIMULATED</span>
+                <span className="bg-white/20 text-white px-1.5 py-0.5 rounded text-[10px] font-mono font-medium">SIMULATED</span>
               </div>
               <p className="text-[11px] text-cyan-100/90 font-mono">Secured Institutional Margin Facility</p>
             </div>
