@@ -29,6 +29,7 @@ const dbName = process.env.DB_NAME || 'alphagen_db';
 
 let client: MongoClient | null = null;
 let dbInstance: Db | null = null;
+let connectPromise: Promise<{ db: Db; isConnected: boolean }> | null = null;
 
 export async function connectToDatabase(): Promise<{ db: Db; isConnected: boolean }> {
   if (!uri) {
@@ -39,15 +40,33 @@ export async function connectToDatabase(): Promise<{ db: Db; isConnected: boolea
     return { db: dbInstance, isConnected: true };
   }
 
-  client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
-  await client.connect();
-  dbInstance = client.db(dbName);
-  console.log(`[MongoDB] Connected to database: ${dbName}`);
+  if (connectPromise) {
+    return connectPromise;
+  }
 
-  // Seed default data if collections are empty (idempotent, no duplicates)
-  await seedDatabaseIfEmpty(dbInstance);
+  connectPromise = (async () => {
+    try {
+      client = new MongoClient(uri, {
+        serverSelectionTimeoutMS: 2500,
+        connectTimeoutMS: 2500
+      });
+      await client.connect();
+      dbInstance = client.db(dbName);
+      console.log(`[MongoDB] Connected to database: ${dbName}`);
 
-  return { db: dbInstance, isConnected: true };
+      // Seed default data if collections are empty (idempotent, no duplicates)
+      await seedDatabaseIfEmpty(dbInstance).catch(err => {
+        console.warn('[MongoDB] Seeding error:', err.message);
+      });
+
+      return { db: dbInstance, isConnected: true };
+    } catch (err) {
+      connectPromise = null;
+      throw err;
+    }
+  })();
+
+  return connectPromise;
 }
 
 export function getDatabase(): Db | null {

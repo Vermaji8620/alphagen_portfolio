@@ -41,16 +41,19 @@ if (FRONTEND_ORIGIN) {
 
 app.use(express.json());
 
+let hasAttemptedDbInit = false;
+
 // On-demand DB connection and path normalization for serverless / Vercel cold starts
 app.use(async (req: Request, _res: Response, next) => {
   if (process.env.VERCEL && !req.url.startsWith('/api')) {
     req.url = '/api' + req.url;
   }
-  if (!getDatabase() && process.env.MONGODB_URI) {
+  if (!getDatabase() && process.env.MONGODB_URI && !hasAttemptedDbInit) {
+    hasAttemptedDbInit = true;
     try {
       await connectToDatabase();
-    } catch {
-      // Gracefully falls back if DB connection encounters issues
+    } catch (err: any) {
+      console.warn('[MongoDB Warning] API operating in fallback mock mode:', err.message);
     }
   }
   next();
