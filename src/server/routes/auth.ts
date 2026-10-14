@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { getDatabase } from '../db';
 import { SEEDED_USERS, DEFAULT_PASSWORD_PLAIN } from '../users';
 import { generateToken, requireAuth, AuthenticatedRequest } from '../middleware/auth';

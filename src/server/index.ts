@@ -1,7 +1,9 @@
 import dns from 'node:dns';
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch { }
+if (!process.env.VERCEL) {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+  } catch { }
+}
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';

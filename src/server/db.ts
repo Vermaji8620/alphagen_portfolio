@@ -4,10 +4,12 @@ import dotenv from 'dotenv';
 
 // Configure DNS to resolve MongoDB Atlas SRV records (mongodb+srv://)
 // Fixes querySrv ECONNREFUSED on Windows and restrictive ISP DNS servers
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch {
-  // Ignore in environments where setServers is restricted
+if (!process.env.VERCEL) {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+  } catch {
+    // Ignore in environments where setServers is restricted
+  }
 }
 
 import {
