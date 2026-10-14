@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -10,7 +10,9 @@ import {
   Clock,
   Compass,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  PlusCircle,
+  Wallet
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -25,6 +27,7 @@ import {
   Cell
 } from 'recharts';
 import { useAlphaGen } from '../context/AlphaGenContext';
+import { PaymentGatewayModal } from './PaymentGatewayModal';
 
 interface PortfolioOverviewProps {
   onNavigateToStrategies: () => void;
@@ -39,7 +42,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   onNavigateToRisk,
   onNavigateToSimulations
 }) => {
-  const { selectedPortfolio, sectorExposures, proposals } = useAlphaGen();
+  const { selectedPortfolio, sectorExposures, proposals, depositFunds } = useAlphaGen();
+  const [isDepositOpen, setIsDepositOpen] = useState(false);
 
   const activeSectors = sectorExposures[selectedPortfolio.id] || [];
   const pendingProposals = proposals.filter(p => p.portfolioId === selectedPortfolio.id && p.status === 'pending');
@@ -81,6 +85,13 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
               </button>
             )}
             <button
+              onClick={() => setIsDepositOpen(true)}
+              className="flex items-center space-x-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Deposit Margin</span>
+            </button>
+            <button
               onClick={onNavigateToRisk}
               className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
             >
@@ -94,20 +105,29 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total AUM */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>Total Portfolio AUM</span>
-            <DollarSign className="w-4 h-4 text-slate-500" />
+        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>Total Portfolio AUM</span>
+              <DollarSign className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="text-2xl font-bold text-slate-100 font-mono">
+              {formatCurrency(selectedPortfolio.aum)}
+            </div>
+            <div className="flex items-center space-x-2 mt-2 text-xs">
+              <span className="text-slate-400">Cash Buffer:</span>
+              <span className="font-mono text-slate-300 font-medium">
+                {formatCurrency(selectedPortfolio.cashBalance)} ({((selectedPortfolio.cashBalance / selectedPortfolio.aum) * 100).toFixed(1)}%)
+              </span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-slate-100 font-mono">
-            {formatCurrency(selectedPortfolio.aum)}
-          </div>
-          <div className="flex items-center space-x-2 mt-2 text-xs">
-            <span className="text-slate-400">Cash Buffer:</span>
-            <span className="font-mono text-slate-300 font-medium">
-              {formatCurrency(selectedPortfolio.cashBalance)} ({((selectedPortfolio.cashBalance / selectedPortfolio.aum) * 100).toFixed(1)}%)
-            </span>
-          </div>
+          <button
+            onClick={() => setIsDepositOpen(true)}
+            className="mt-3 w-full py-1.5 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center justify-center space-x-1.5 transition-colors"
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Deposit Margin Funds</span>
+          </button>
         </div>
 
         {/* Daily P&L */}
@@ -341,6 +361,17 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Razorpay / Institutional Settlement Simulation Modal */}
+      {isDepositOpen && (
+        <PaymentGatewayModal
+          portfolio={selectedPortfolio}
+          onClose={() => setIsDepositOpen(false)}
+          onSuccess={async (amount, paymentMethod) => {
+            await depositFunds(selectedPortfolio.id, amount, paymentMethod);
+          }}
+        />
+      )}
     </div>
   );
 };

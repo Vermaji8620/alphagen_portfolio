@@ -100,6 +100,19 @@ export const api = {
     return res.json();
   },
 
+  async depositFunds(portfolioId: string, amount: number): Promise<Portfolio> {
+    const res = await authFetch(`${API_BASE}/portfolios/${encodeURIComponent(portfolioId)}/deposit`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Failed to deposit funds (${res.status})`);
+    }
+    return res.json();
+  },
+
   async getProposals(): Promise<StrategyProposal[]> {
     const res = await authFetch(`${API_BASE}/proposals`);
     if (!res.ok) throw new Error('Failed to fetch proposals from API');

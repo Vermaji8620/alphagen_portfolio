@@ -69,6 +69,43 @@ app.get('/api/portfolios', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/portfolios/:id/deposit (Protected - Deposit margin cash)
+app.patch('/api/portfolios/:id/deposit', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+    const depositAmount = Number(amount);
+
+    if (!depositAmount || depositAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid deposit amount' });
+    }
+
+    const db = getDatabase();
+    if (!db) {
+      const target = INITIAL_PORTFOLIOS.find(p => p.id === id);
+      if (!target) return res.status(404).json({ error: 'Portfolio not found' });
+      target.cashBalance += depositAmount;
+      target.aum += depositAmount;
+      return res.json(target);
+    }
+
+    const result = await db.collection('portfolios').findOneAndUpdate(
+      { id },
+      { $inc: { cashBalance: depositAmount, aum: depositAmount } },
+      { returnDocument: 'after', projection: { _id: 0 } }
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    return res.json(result);
+  } catch (err: any) {
+    console.error('Error depositing funds:', err);
+    return res.status(500).json({ error: 'Failed to process margin deposit' });
+  }
+});
+
 // GET /api/proposals (Protected)
 app.get('/api/proposals', requireAuth, async (req: Request, res: Response) => {
   try {

@@ -38,6 +38,7 @@ interface AlphaGenContextType {
   approveProposal: (id: string, notes?: string) => Promise<void>;
   rejectProposal: (id: string, notes?: string) => Promise<void>;
   simulateExecuteProposal: (id: string) => Promise<void>;
+  depositFunds: (portfolioId: string, amount: number, paymentMethod: string) => Promise<void>;
   resetToDefaults: () => Promise<void>;
   
   // Quick lookup
@@ -230,6 +231,36 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const depositFunds = async (portfolioId: string, amount: number, paymentMethod: string) => {
+    const now = new Date().toISOString();
+    const target = portfolios.find(p => p.id === portfolioId) || selectedPortfolio;
+    const actorName = user ? `${user.name} (${user.role.replace('_', ' ')})` : 'Portfolio Manager (Human Token #PM-8921)';
+
+    const formattedAmount = `$${(amount / 1e6).toFixed(1)}M`;
+    const newLog: AuditActivityItem = {
+      id: `log-${Date.now()}`,
+      timestamp: now,
+      type: 'SIMULATED_ORDER_ROUTED',
+      portfolioCode: target.code,
+      summary: `Margin Deposit Processed - ${formattedAmount} (${paymentMethod})`,
+      details: `Simulated payment gateway checkout verified. Settled to collateral cash sweep buffer. Actor: ${actorName}.`,
+      actor: actorName as any
+    };
+
+    try {
+      const updated = await api.depositFunds(portfolioId, amount);
+      await api.addAuditLog(newLog).catch(() => {});
+
+      // Update shared portfolios state
+      setPortfolios(prev => prev.map(p => (p.id === portfolioId ? updated : p)));
+      setAuditLogs(prev => [newLog, ...prev]);
+    } catch (err: any) {
+      console.error('Failed to process margin deposit via API:', err);
+      setApiError(`Failed to process deposit: ${err.message}`);
+      throw err;
+    }
+  };
+
   const resetToDefaults = async () => {
     try {
       await api.resetData().catch(() => {});
@@ -271,6 +302,7 @@ export const AlphaGenProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         approveProposal,
         rejectProposal,
         simulateExecuteProposal,
+        depositFunds,
         resetToDefaults,
         getSimulationById,
         getProposalById
