@@ -64,7 +64,7 @@ export const App: React.FC = () => {
   ];
 
   return (
-    <div className="h-screen w-screen bg-institutional-canvas text-slate-900 flex flex-col font-sans overflow-hidden">
+    <div className="h-screen w-screen bg-institutional-canvas text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-hidden">
       {/* Compact Persistent FactSet Workstation Header */}
       <Header openAgentTelemetry={() => setIsTelemetryOpen(true)} />
 

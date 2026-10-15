@@ -34,7 +34,7 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-institutional-canvas text-slate-900 flex flex-col justify-center items-center p-4 relative">
+    <div className="min-h-screen bg-institutional-canvas text-slate-900 dark:text-slate-100 flex flex-col justify-center items-center p-4 relative">
       {/* Top-Right Theme Toggle */}
       <div className="absolute top-4 right-4">
         <button
