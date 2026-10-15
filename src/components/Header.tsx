@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ openAgentTelemetry }) => {
         {/* Right: Workstation Tools & User Session */}
         <div className="flex items-center space-x-2 shrink-0">
           {/* Theme Toggle Button (Crescent Moon) */}
-          <button
+          {/* <button
             onClick={toggleTheme}
             className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition-all cursor-pointer text-xs font-mono"
             title={isDark ? "Switch to Workstation Light Mode" : "Switch to Dark Mode"}
@@ -99,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({ openAgentTelemetry }) => {
           >
             <Moon className={`w-3.5 h-3.5 ${isDark ? 'text-blue-400' : 'text-slate-600'}`} />
             <span className="hidden sm:inline text-xs">{isDark ? 'Dark' : 'Light'}</span>
-          </button>
+          </button> */}
 
           {/* Telemetry Trigger */}
           <button
