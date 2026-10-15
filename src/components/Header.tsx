@@ -1,213 +1,144 @@
 import React from 'react';
 import {
-  TrendingUp,
-  Activity,
-  Sliders,
-  PlayCircle,
-  ShieldCheck,
   Cpu,
   RefreshCw,
-  Layers,
   ChevronDown,
-  ExternalLink,
   Database,
-  LogOut
+  Moon
 } from 'lucide-react';
 import { useAlphaGen } from '../context/AlphaGenContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface HeaderProps {
-  currentTab: 'overview' | 'strategies' | 'risk' | 'simulations';
-  setCurrentTab: (tab: 'overview' | 'strategies' | 'risk' | 'simulations') => void;
   openAgentTelemetry: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentTab, setCurrentTab, openAgentTelemetry }) => {
-  const { user, logout } = useAuth();
+export const Header: React.FC<HeaderProps> = ({ openAgentTelemetry }) => {
+  const { user } = useAuth();
+  const { toggleTheme, isDark, isLight } = useTheme();
   const {
     portfolios,
     selectedPortfolioId,
     setSelectedPortfolioId,
     selectedPortfolio,
-    proposals,
     resetToDefaults,
     dbConnected
   } = useAlphaGen();
 
-  const pendingCount = proposals.filter(p => p.status === 'pending').length;
-
   return (
-    <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
-      {/* Top tier: Institutional prototype ticker bar & simulated cluster telemetry */}
-      <div className="border-b border-slate-800/60 px-4 py-1.5 flex items-center justify-between text-xs text-slate-400 bg-slate-950/60 font-mono">
-        <div className="flex items-center space-x-6">
+    <header className="border-b border-institutional-border bg-institutional-panel sticky top-0 z-40 select-none">
+      {/* Compact FactSet Workstation Persistent Header Bar */}
+      <div className="h-12 px-3 sm:px-4 flex items-center justify-between gap-3 text-sm">
+        {/* Left: Brand Identity & Active Mandate Context */}
+        <div className="flex items-center space-x-3 shrink-0">
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-slate-300 font-semibold tracking-wide">ALPHAGEN PROTOTYPE SANDBOX</span>
-            <span className="bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded text-[10px] border border-slate-700">SIMULATED DATA</span>
+            <div className="w-6 h-6 rounded bg-blue-800 text-white flex items-center justify-center font-mono font-bold text-xs tracking-tight shadow-sm">
+              αG
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <span className="font-semibold text-slate-900 tracking-tight text-base font-sans">AlphaGen</span>
+              <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300">
+                WORKSTATION
+              </span>
+            </div>
           </div>
-          <div className="hidden md:flex items-center space-x-4 text-slate-400">
-            <span className="flex items-center space-x-1.5">
-              <Database className="w-3 h-3 text-cyan-400" />
-              <span>STORAGE: </span>
-              {dbConnected ? (
-                <strong className="text-emerald-400 font-semibold">MongoDB Atlas (Live)</strong>
-              ) : (
-                <strong className="text-amber-400 font-semibold" title="Waiting for MONGODB_URI in .env">MongoDB Atlas (Connecting / Standby)</strong>
-              )}
+
+          <div className="h-4 w-px bg-slate-300 hidden md:block" />
+
+          {/* Mandate Selector */}
+          <div className="flex items-center space-x-2">
+            <span className="text-xs uppercase tracking-wider text-slate-500 font-mono hidden xl:inline">Mandate:</span>
+            <div className="relative">
+              <select
+                value={selectedPortfolioId}
+                onChange={(e) => setSelectedPortfolioId(e.target.value)}
+                className="appearance-none bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded px-2.5 py-1 pr-7 text-xs font-medium cursor-pointer focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition-colors shadow-sm"
+              >
+                {portfolios.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.code} — ${(p.aum / 1e9).toFixed(2)}B AUM ({p.benchmark})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 pointer-events-none absolute right-2 top-2.5" />
+            </div>
+
+            <span className="text-xs font-mono text-slate-600 hidden lg:inline">
+              Benchmark: <strong className="text-slate-800">{selectedPortfolio.benchmark}</strong>
             </span>
-            <span>REFERENCE FEEDS: <strong className="text-emerald-400">Illustrative Market Data</strong></span>
-            <span>SIMULATION ENGINE: <strong className="text-cyan-400">10k Paths (Precomputed Model)</strong></span>
+            <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300 hidden lg:inline">
+              {selectedPortfolio.currentRegime}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        {/* Center: System Status & Pipeline Telemetry Feed */}
+        <div className="hidden 2xl:flex items-center space-x-4 text-xs text-slate-500 font-mono">
+          <span className="flex items-center space-x-1">
+            <Database className="w-3.5 h-3.5 text-slate-400" />
+            <span>Store:</span>
+            {dbConnected ? (
+              <span className="text-emerald-700 font-medium">Atlas Live</span>
+            ) : (
+              <span className="text-amber-700 font-medium" title="Operating in local standby">Atlas Standby</span>
+            )}
+          </span>
+          <span>Feeds: <strong className="text-slate-700">Composite Index</strong></span>
+          <span>Engine: <strong className="text-slate-700">10k Monte Carlo</strong></span>
+        </div>
+
+        {/* Right: Workstation Tools & User Session */}
+        <div className="flex items-center space-x-2 shrink-0">
+          {/* Theme Toggle Button (Crescent Moon) */}
           <button
-            onClick={openAgentTelemetry}
-            className="flex items-center space-x-1.5 text-cyan-400 hover:text-cyan-300 transition-colors bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-800/50 px-2 py-0.5 rounded text-[11px]"
-            title="Inspect Agent Orchestration & Kafka Topology"
+            onClick={toggleTheme}
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition-all cursor-pointer text-xs font-mono"
+            title={isDark ? "Switch to Workstation Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle Dark/Light Mode"
           >
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Agent Telemetry</span>
+            <Moon className={`w-3.5 h-3.5 ${isDark ? 'text-blue-400' : 'text-slate-600'}`} />
+            <span className="hidden sm:inline text-xs">{isDark ? 'Dark' : 'Light'}</span>
           </button>
 
+          {/* Telemetry Trigger */}
+          <button
+            onClick={openAgentTelemetry}
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition-colors cursor-pointer text-xs"
+            title="Inspect Agent Orchestration & Order Slicing Engine"
+          >
+            <Cpu className="w-3.5 h-3.5 text-blue-700" />
+            <span className="hidden sm:inline text-xs font-sans">Telemetry</span>
+          </button>
+
+          {/* Reset Baseline Trigger */}
           <button
             onClick={() => {
-              if (window.confirm('Reset all proposals and mock audit history to default case-study baseline?')) {
+              if (window.confirm('Reset portfolio proposals and audit records to baseline values?')) {
                 resetToDefaults();
               }
             }}
-            className="flex items-center space-x-1 text-slate-400 hover:text-slate-200 transition-colors text-[11px]"
-            title="Reset prototype local state"
+            className="flex items-center space-x-1 text-slate-500 hover:text-slate-800 p-1.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Reset to default prototype sample dataset"
           >
-            <RefreshCw className="w-3 h-3" />
-            <span className="hidden sm:inline">Reset State</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main navigation and Portfolio Selector */}
-      <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-        {/* Brand */}
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-950/40">
-            <div className="w-full h-full bg-slate-900 rounded-[7px] flex items-center justify-center">
-              <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 text-lg font-mono tracking-tighter">αG</span>
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="font-bold text-slate-100 text-base tracking-tight font-sans">AlphaGen</h1>
-              <span className="bg-cyan-900/40 text-cyan-400 border border-cyan-700/50 px-1.5 py-0.2 rounded text-[10px] font-mono font-medium">v2.4 INSTITUTIONAL</span>
-            </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">Autonomous Agentic Quantitative Strategy & Risk Engine</p>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <nav className="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 text-xs font-medium">
-          <button
-            onClick={() => setCurrentTab('overview')}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all ${
-              currentTab === 'overview'
-                ? 'bg-slate-800 text-cyan-400 shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>Portfolio Overview</span>
+            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
           </button>
 
-          <button
-            onClick={() => setCurrentTab('strategies')}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all relative ${
-              currentTab === 'strategies'
-                ? 'bg-slate-800 text-cyan-400 shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            <span>Strategy Proposals</span>
-            {pendingCount > 0 && (
-              <span className="ml-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 px-1.5 py-0.2 text-[10px] rounded-full font-bold">
-                {pendingCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('risk')}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all ${
-              currentTab === 'risk'
-                ? 'bg-slate-800 text-cyan-400 shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-            }`}
-          >
-            <Sliders className="w-4 h-4" />
-            <span>Factor & Risk Analytics</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('simulations')}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all ${
-              currentTab === 'simulations'
-                ? 'bg-slate-800 text-cyan-400 shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-            }`}
-          >
-            <PlayCircle className="w-4 h-4" />
-            <span>Monte Carlo Simulations</span>
-          </button>
-        </nav>
-
-        {/* Portfolio Selector Dropdown & User Profile / Logout */}
-        <div className="flex items-center space-x-3">
-          <div className="text-right hidden xl:block">
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">Active Mandate</div>
-            <div className="text-xs font-semibold text-slate-200">{selectedPortfolio.name}</div>
-          </div>
-          <div className="relative">
-            <select
-              value={selectedPortfolioId}
-              onChange={(e) => setSelectedPortfolioId(e.target.value)}
-              className="appearance-none bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-lg px-3 py-2 pr-8 text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors shadow-sm"
-            >
-              {portfolios.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.code} — ${(p.aum / 1e9).toFixed(2)}B AUM ({p.benchmark})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-2.5" />
-          </div>
-
-          {/* User Session & Logout */}
+          {/* User Session Profile */}
           {user && (
-            <div className="flex items-center pl-2 border-l border-slate-800 space-x-2.5">
-              <div className="hidden sm:block text-right">
-                <div className="text-xs font-semibold text-slate-100 flex items-center justify-end space-x-1">
-                  <span>{user.name}</span>
+            <div className="flex items-center pl-2.5 border-l border-slate-300">
+              <div className="hidden md:block text-right leading-tight">
+                <div className="text-xs font-semibold text-slate-800">
+                  {user.name}
                 </div>
-                <div className="flex items-center justify-end space-x-1.5 mt-0.5">
-                  <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
-                    user.role === 'PORTFOLIO_MANAGER'
-                      ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60'
-                      : user.role === 'RISK_ANALYST'
-                      ? 'bg-amber-950/80 text-amber-400 border-amber-800/60'
-                      : 'bg-purple-950/80 text-purple-400 border-purple-800/60'
-                  }`}>
-                    {user.role === 'PORTFOLIO_MANAGER' ? 'PM (FULL EXECUTION)' : user.role === 'RISK_ANALYST' ? 'RISK (READ-ONLY)' : 'QUANT (READ-ONLY)'}
-                  </span>
+                <div className="text-[11px] font-mono text-slate-500 uppercase">
+                  {user.role === 'PORTFOLIO_MANAGER'
+                    ? 'Portfolio Mgr'
+                    : user.role === 'RISK_ANALYST'
+                    ? 'Risk Analyst'
+                    : 'Researcher'}
                 </div>
               </div>
-
-              <button
-                onClick={logout}
-                title="Log out of institutional terminal"
-                className="p-2 rounded-lg bg-slate-800 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-800 text-slate-400 hover:text-rose-300 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
             </div>
           )}
         </div>

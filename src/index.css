@@ -2,33 +2,260 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, html.dark {
   color-scheme: dark;
+
+  /* Institutional Dark Theme: Deep Obsidian & Cobalt Blue */
+  --color-bg-canvas: 9, 11, 16;
+  --color-bg-panel: 16, 19, 27;
+  --color-bg-card: 19, 23, 34;
+  --color-bg-card-hover: 24, 29, 43;
+  --color-border: 31, 37, 54;
+  --color-border-subtle: 24, 29, 42;
+  
+  --color-primary: 37, 99, 235;
+  --color-primary-hover: 29, 78, 216;
+
+  --color-slate-950: 9, 11, 16;
+  --color-slate-900: 16, 19, 27;
+  --color-slate-850: 19, 23, 34;
+  --color-slate-800: 31, 37, 54;
+  --color-slate-750: 39, 48, 69;
+  --color-slate-700: 51, 62, 89;
+  --color-slate-600: 71, 85, 105;
+  --color-slate-500: 100, 116, 139;
+  --color-slate-400: 148, 163, 184;
+  --color-slate-300: 203, 213, 225;
+  --color-slate-200: 226, 232, 240;
+  --color-slate-100: 241, 245, 249;
+
+  --color-blue-950: 15, 31, 61;
+  --color-blue-900: 30, 58, 138;
+  --color-blue-800: 30, 64, 175;
+  --color-blue-700: 29, 78, 216;
+  --color-blue-600: 37, 99, 235;
+  --color-blue-500: 59, 130, 246;
+  --color-blue-400: 96, 165, 250;
+  --color-blue-300: 147, 197, 253;
+  --color-blue-200: 191, 219, 254;
+  --color-blue-100: 219, 234, 254;
+  --color-blue-50: 239, 246, 255;
+
+  --color-emerald-bg: 5, 46, 32;
+  --color-emerald-border: 11, 90, 63;
+  --color-rose-bg: 55, 13, 24;
+  --color-rose-border: 109, 24, 46;
+  --color-amber-bg: 51, 29, 4;
+  --color-amber-border: 99, 57, 8;
+}
+
+html.light {
+  color-scheme: light;
+
+  /* FactSet Portfolio Analytics & BarraOne Workstation Theme */
+  --color-bg-canvas: 240, 243, 246;       /* #f0f3f6 - Light neutral analytical workspace */
+  --color-bg-panel: 255, 255, 255;        /* #ffffff - Pure crisp white analytical panels */
+  --color-bg-card: 255, 255, 255;         /* #ffffff - Pure white analytical cards */
+  --color-bg-card-hover: 248, 250, 252;   /* #f8fafc - Very subtle hover */
+  --color-border: 216, 222, 230;          /* #d8dee6 - Thin 1px gray border */
+  --color-border-subtle: 229, 231, 235;   /* #e5e7eb - Subtle inner border */
+  
+  --color-primary: 30, 64, 175;           /* #1e40af - Restrained Institutional Navy Blue */
+  --color-primary-hover: 29, 78, 216;     /* #1d4ed8 - Corporate Blue Hover */
+
+  /* Workstation Neutral Typography & Surface Tokens */
+  --color-slate-950: 255, 255, 255;       /* Pure white */
+  --color-slate-900: 248, 250, 252;       /* Light neutral surface #f8fafc */
+  --color-slate-850: 241, 245, 249;       /* Light neutral bar #f1f5f9 */
+  --color-slate-800: 226, 232, 240;       /* Neutral pill background #e2e8f0 */
+  --color-slate-750: 203, 213, 225;       /* Neutral border #cbd5e1 */
+  --color-slate-700: 148, 163, 184;       /* Slate border/icon #94a3b8 */
+  --color-slate-600: 100, 116, 139;       /* Secondary neutral text #64748b */
+  --color-slate-500: 100, 116, 139;       /* Muted label text #64748b */
+  --color-slate-400: 71, 85, 105;         /* Medium slate text #475569 */
+  --color-slate-300: 51, 65, 85;          /* Dark slate body text #334155 */
+  --color-slate-200: 30, 41, 59;          /* High-emphasis body text #1e293b */
+  --color-slate-100: 15, 23, 42;          /* Deepest ink header text #0f172a */
+
+  /* Restrained Institutional Blue Palette */
+  --color-blue-950: 239, 246, 255;        /* #eff6ff - Subtle blue tint container */
+  --color-blue-900: 219, 234, 254;        /* #dbeafe - Soft blue border */
+  --color-blue-800: 191, 219, 254;
+  --color-blue-700: 29, 78, 216;          /* #1d4ed8 */
+  --color-blue-600: 30, 64, 175;          /* #1e40af - Primary Institutional Navy Blue */
+  --color-blue-500: 37, 99, 235;          /* #2563eb */
+  --color-blue-400: 30, 64, 175;          /* #1e40af */
+  --color-blue-300: 29, 78, 216;
+  --color-blue-200: 191, 219, 254;
+  --color-blue-100: 219, 234, 254;
+  --color-blue-50: 239, 246, 255;
+
+  --color-emerald-bg: 236, 253, 245;
+  --color-emerald-border: 110, 231, 183;
+  --color-rose-bg: 254, 242, 242;
+  --color-rose-border: 254, 202, 202;
+  --color-amber-bg: 254, 243, 199;
+  --color-amber-border: 253, 230, 138;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #080c14;
-  color: #f1f5f9;
+  background-color: rgb(var(--color-bg-canvas));
+  color: rgb(var(--color-slate-100));
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar for institutional terminals */
+/* Tabular figures for institutional financial data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Crisp workstation scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: rgb(var(--color-bg-canvas));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: rgb(var(--color-border));
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgb(var(--color-primary));
+}
+
+/* ========================================================
+   FACTSET / BARRAONE WORKSTATION STYLES
+   ======================================================== */
+html.light body {
+  background-color: #f0f3f6;
+  color: #0f172a;
+}
+
+/* Analytical panels and cards: Pure white with thin gray borders and subtle shadow */
+html.light .bg-institutional-panel,
+html.light .bg-institutional-card {
+  background-color: #ffffff;
+  border-color: #d8dee6 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+html.light .bg-institutional-canvas {
+  background-color: #f0f3f6 !important;
+}
+
+html.light .border-institutional-border {
+  border-color: #d8dee6 !important;
+}
+
+html.light .border-institutional-borderSubtle {
+  border-color: #e5e7eb !important;
+}
+
+/* Workstation form inputs and select dropdowns */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #d1d5db !important;
+  border-radius: 3px !important;
+}
+
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #1e40af !important;
+  box-shadow: 0 0 0 1px #1e40af !important;
+}
+
+/* Workstation analytical tables */
+html.light thead {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #d8dee6 !important;
+}
+
+html.light thead th {
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+html.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Neutral workstation pills and capsules */
+html.light .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light .bg-slate-900 {
+  background-color: #f8fafc !important;
+  border-color: #d8dee6 !important;
+}
+
+html.light .bg-slate-950 {
+  background-color: #ffffff !important;
+  border-color: #d8dee6 !important;
+}
+
+/* Typography tokens for light workstation */
+html.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Subdued semantic indicators */
+html.light .text-emerald-400 {
+  color: #059669 !important;
+}
+
+html.light .text-rose-400 {
+  color: #dc2626 !important;
+}
+
+html.light .text-amber-400 {
+  color: #d97706 !important;
+}
+
+/* Restrained Blue Accents */
+html.light .bg-blue-600 {
+  background-color: #1e40af !important;
+  color: #ffffff !important;
+}
+
+html.light .bg-blue-600:hover {
+  background-color: #1d4ed8 !important;
+}
+
+html.light .text-blue-400 {
+  color: #1e40af !important;
 }

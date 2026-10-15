@@ -1,13 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ShieldAlert,
-  Sliders,
-  AlertTriangle,
   Info,
   CheckCircle2,
-  TrendingDown,
-  BarChart3,
-  HelpCircle
+  AlertTriangle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -23,256 +19,265 @@ import {
 import { useAlphaGen } from '../context/AlphaGenContext';
 
 export const FactorRiskScreen: React.FC = () => {
-  const { selectedPortfolio, factorExposures, sectorExposures } = useAlphaGen();
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const { selectedPortfolio, factorExposures } = useAlphaGen();
 
   const factors = factorExposures[selectedPortfolio.id] || [];
-  const sectors = sectorExposures[selectedPortfolio.id] || [];
 
   return (
-    <div className="space-y-6">
-      {/* Risk Header & Institutional Disclosure */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2 text-cyan-400 font-mono text-xs uppercase mb-1">
-              <ShieldAlert className="w-4 h-4" />
-              <span>Multi-Factor Exposure Modeling & Stress Testing</span>
-            </div>
-            <h2 className="text-xl font-bold text-slate-100">
-              Factor Risks & Stress Scenario Matrix ({selectedPortfolio.code})
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
-              Illustrative rolling 60-day Newey-West standard error corrected factor regression loadings.
-              Automated drift detection flags loadings exceeding 2.0 standard deviations from the 60-day mean (Illustrative Precomputed Model).
-            </p>
+    <div className="space-y-3">
+      {/* 1. Header & Risk Model Headline Strip */}
+      <div className="bg-institutional-panel border border-institutional-border rounded p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+        <div>
+          <div className="flex items-center space-x-2 text-xs font-mono text-slate-500 uppercase tracking-wider font-semibold">
+            <ShieldAlert className="w-3.5 h-3.5 text-blue-700" />
+            <span>MSCI Barra Multi-Factor Exposure & Risk Model</span>
           </div>
+          <h2 className="text-base font-semibold text-slate-900 mt-0.5">
+            Factor Risks & Stress Scenario Matrix ({selectedPortfolio.code})
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5 font-sans">
+            Rolling 60-day Newey-West standard error corrected regression loadings with ±2.0 SD drift watchdog.
+          </p>
+        </div>
 
-          <div className="bg-slate-950 border border-slate-800 px-3.5 py-2.5 rounded-lg text-xs font-mono shrink-0">
-            <span className="text-slate-400">Active Factor Risk: </span>
-            <span className="text-cyan-400 font-bold">{selectedPortfolio.riskMetrics.activeFactorRisk}%</span>
-            <span className="text-slate-500 ml-2">| Target Vol: {selectedPortfolio.targetVolatility}%</span>
+        <div className="flex items-center space-x-4 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded font-mono text-xs tabular-nums shrink-0">
+          <div>
+            <span className="text-xs text-slate-500 uppercase block">Active Factor Risk</span>
+            <strong className="text-slate-900 text-base">{selectedPortfolio.riskMetrics.activeFactorRisk}%</strong>
+          </div>
+          <div className="border-l border-slate-200 pl-3">
+            <span className="text-xs text-slate-500 uppercase block">Target Vol</span>
+            <strong className="text-slate-700 text-base">{selectedPortfolio.targetVolatility}%</strong>
+          </div>
+          <div className="border-l border-slate-200 pl-3">
+            <span className="text-xs text-slate-500 uppercase block">Annualized Vol</span>
+            <strong className="text-slate-700 text-base">{selectedPortfolio.riskMetrics.volatilityAnnualized}%</strong>
           </div>
         </div>
       </div>
 
-      {/* Primary Risk Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. VaR, CVaR & Tail Risk Summary Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
         {/* VaR 95% */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-institutional-panel border border-institutional-border rounded p-3 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center space-x-1">
               <span>Value at Risk (95%)</span>
-              <span title="Max expected 1-day loss at 95% confidence level" className="cursor-help">
-                <Info className="w-3.5 h-3.5 text-slate-500" />
-              </span>
+              <Info className="w-3.5 h-3.5 text-slate-400" />
             </span>
-            <span className="text-[10px] font-mono text-slate-500">1-DAY HORIZON</span>
+            <span className="font-mono text-xs">1-DAY</span>
           </div>
-          <div className="text-2xl font-bold text-rose-400 font-mono">
+          <div className="text-xl font-bold text-rose-700 font-mono tabular-nums mt-1">
             {selectedPortfolio.riskMetrics.var95}%
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 font-mono">
+          <div className="text-xs text-slate-500 font-mono mt-1">
             Est. Max Loss: ~${((Math.abs(selectedPortfolio.riskMetrics.var95) / 100) * selectedPortfolio.aum / 1e6).toFixed(1)}M
-          </p>
+          </div>
         </div>
 
         {/* VaR 99% */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-institutional-panel border border-institutional-border rounded p-3 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center space-x-1">
               <span>Value at Risk (99%)</span>
-              <span title="Max expected 1-day loss at 99% confidence level (Mandate ceiling -2.50%)" className="cursor-help">
-                <Info className="w-3.5 h-3.5 text-slate-500" />
-              </span>
+              <Info className="w-3.5 h-3.5 text-slate-400" />
             </span>
-            <span className="text-[10px] font-mono text-slate-500">MANDATE CAP</span>
+            <span className="font-mono text-xs">MANDATE CAP</span>
           </div>
-          <div className="text-2xl font-bold text-rose-500 font-mono">
+          <div className="text-xl font-bold text-rose-800 font-mono tabular-nums mt-1">
             {selectedPortfolio.riskMetrics.var99}%
           </div>
-          <p className="text-[11px] text-emerald-400 mt-2 font-mono flex items-center space-x-1">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>Compliant with -2.50% ceiling</span>
-          </p>
+          <div className="text-xs text-emerald-700 font-mono mt-1 flex items-center space-x-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Compliant with -2.50% cap</span>
+          </div>
         </div>
 
-        {/* CVaR (Expected Shortfall) */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        {/* CVaR 95% */}
+        <div className="bg-institutional-panel border border-institutional-border rounded p-3 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center space-x-1">
               <span>Conditional VaR (95%)</span>
-              <span title="Expected average tail loss beyond 95th percentile" className="cursor-help">
-                <Info className="w-3.5 h-3.5 text-slate-500" />
-              </span>
+              <Info className="w-3.5 h-3.5 text-slate-400" />
             </span>
-            <span className="text-[10px] font-mono text-slate-500">EXPECTED SHORTFALL</span>
+            <span className="font-mono text-xs">EXPECTED SHORTFALL</span>
           </div>
-          <div className="text-2xl font-bold text-amber-400 font-mono">
+          <div className="text-xl font-bold text-amber-800 font-mono tabular-nums mt-1">
             {selectedPortfolio.riskMetrics.cvar95}%
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 font-mono">
-            Tail Risk Beta: {selectedPortfolio.riskMetrics.betaToSP500} to SPX
-          </p>
+          <div className="text-xs text-slate-500 font-mono mt-1">
+            Tail Beta to SPX: {selectedPortfolio.riskMetrics.betaToSP500}
+          </div>
         </div>
 
         {/* Sharpe & Sortino */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-institutional-panel border border-institutional-border rounded p-3 flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Risk-Adjusted Return</span>
-            <span className="text-[10px] font-mono text-cyan-400">ANNUALIZED</span>
+            <span className="font-mono text-xs">ANNUALIZED</span>
           </div>
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-baseline space-x-4 mt-1 font-mono tabular-nums">
             <div>
-              <span className="text-xs text-slate-400 font-mono">Sharpe: </span>
-              <span className="text-2xl font-bold text-cyan-400 font-mono">{selectedPortfolio.riskMetrics.sharpeRatio}</span>
+              <span className="text-xs text-slate-500 block font-sans">Sharpe</span>
+              <strong className="text-base font-bold text-slate-900">{selectedPortfolio.riskMetrics.sharpeRatio}</strong>
             </div>
-            <div>
-              <span className="text-xs text-slate-400 font-mono">Sortino: </span>
-              <span className="text-lg font-bold text-emerald-400 font-mono">{selectedPortfolio.riskMetrics.sortinoRatio}</span>
+            <div className="border-l border-slate-200 pl-3">
+              <span className="text-xs text-slate-500 block font-sans">Sortino</span>
+              <strong className="text-base font-bold text-emerald-700">{selectedPortfolio.riskMetrics.sortinoRatio}</strong>
             </div>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 font-mono">
-            Ann Vol: <strong className="text-slate-200">{selectedPortfolio.riskMetrics.volatilityAnnualized}%</strong>
-          </p>
+          <div className="text-xs text-slate-500 font-mono mt-1">
+            Hist Max DD: <strong className="text-slate-700">{selectedPortfolio.riskMetrics.maxDrawdownHistorical}%</strong>
+          </div>
         </div>
       </div>
 
-      {/* Factor Loading Chart & Table */}
-      <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
+      {/* 3. Exposure Analysis: Active Factor Loadings Bar Chart & Table */}
+      <div className="bg-institutional-panel border border-institutional-border rounded overflow-hidden shadow-xs">
+        <div className="px-3.5 py-2.5 border-b border-institutional-border flex items-center justify-between bg-slate-50/70">
           <div>
-            <h3 className="text-sm font-semibold text-slate-200">Active Factor Loadings (Active Tilt vs Benchmark)</h3>
-            <p className="text-xs text-slate-400 font-mono">Regression Z-Scores and drift detection flags (&gt;2.0 SD)</p>
+            <h3 className="text-sm font-semibold text-slate-800">Active Multi-Factor Loadings (Active Tilt vs Benchmark)</h3>
+            <p className="text-xs text-slate-500">Regression Z-Scores and drift detection watchdog flags (&gt;2.0 SD)</p>
           </div>
           <div className="flex items-center space-x-2 text-xs font-mono">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            <span className="text-slate-400">Drift Alert (&gt;2.0 SD)</span>
+            <span className="w-2 h-0.5 bg-rose-600"></span>
+            <span className="text-slate-600 text-xs">Drift Threshold (±2.0 SD)</span>
           </div>
         </div>
 
-        {/* Factor Loading Bar Chart */}
-        <div className="h-64 w-full mb-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={factors} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="factor" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
-              <YAxis stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
-              <ReferenceLine y={0} stroke="#475569" />
-              <ReferenceLine y={2} stroke="#f43f5e" strokeDasharray="3 3" label={{ value: '+2.0 SD', fill: '#f43f5e', fontSize: 10 }} />
-              <ReferenceLine y={-2} stroke="#f43f5e" strokeDasharray="3 3" label={{ value: '-2.0 SD', fill: '#f43f5e', fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '11px' }}
-                formatter={(val: any) => [`${val}`, 'Loading']}
-              />
-              <Bar dataKey="loading" radius={[4, 4, 0, 0]}>
-                {factors.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.driftAlert ? '#f43f5e' : entry.loading >= 0 ? '#06b6d4' : '#3b82f6'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <div className="p-3">
+          {/* Factor Bar Chart */}
+          <div className="h-56 w-full mb-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={factors} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="factor" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                <YAxis stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                <ReferenceLine y={0} stroke="#94a3b8" />
+                <ReferenceLine y={2} stroke="#dc2626" strokeDasharray="3 3" label={{ value: '+2.0 SD', fill: '#dc2626', fontSize: 11 }} />
+                <ReferenceLine y={-2} stroke="#dc2626" strokeDasharray="3 3" label={{ value: '-2.0 SD', fill: '#dc2626', fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#cbd5e1',
+                    color: '#0f172a',
+                    borderRadius: '3px',
+                    fontSize: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}
+                  formatter={(val: any) => [`${val}`, 'Loading']}
+                />
+                <Bar dataKey="loading" radius={[2, 2, 0, 0]}>
+                  {factors.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.driftAlert ? '#dc2626' : entry.loading >= 0 ? '#1e40af' : '#64748b'}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
 
-        {/* Factor Detail Table */}
-        <div className="overflow-x-auto rounded-lg border border-slate-800">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-950 text-slate-400 uppercase text-[10px]">
-              <tr>
-                <th className="py-2.5 px-3">Factor Model Name</th>
-                <th className="py-2.5 px-3 text-right">Portfolio Loading</th>
-                <th className="py-2.5 px-3 text-right">Benchmark</th>
-                <th className="py-2.5 px-3 text-right">Active Exposure</th>
-                <th className="py-2.5 px-3 text-right">T-Statistic</th>
-                <th className="py-2.5 px-3 text-right">60-Day SD</th>
-                <th className="py-2.5 px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-900/60">
-              {factors.map((f, idx) => (
-                <tr key={idx} className="hover:bg-slate-850/50">
-                  <td className="py-2.5 px-3">
-                    <div className="font-bold text-slate-200">{f.factor}</div>
-                    <div className="text-[10px] text-slate-500 font-sans">{f.description}</div>
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-slate-100">{f.loading}</td>
-                  <td className="py-2.5 px-3 text-right text-slate-400">{f.benchmarkLoading}</td>
-                  <td className={`py-2.5 px-3 text-right font-medium ${f.activeExposure >= 0 ? 'text-cyan-400' : 'text-blue-400'}`}>
-                    {f.activeExposure >= 0 ? '+' : ''}{f.activeExposure.toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-slate-300">{f.tStat.toFixed(2)}</td>
-                  <td className={`py-2.5 px-3 text-right font-semibold ${Math.abs(f.standardDeviations60d) > 2 ? 'text-rose-400' : 'text-slate-300'}`}>
-                    {f.standardDeviations60d > 0 ? '+' : ''}{f.standardDeviations60d} SD
-                  </td>
-                  <td className="py-2.5 px-3">
-                    {f.driftAlert ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800 flex items-center space-x-1 w-max">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>DRIFT ALERT</span>
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">
-                        NORMAL
-                      </span>
-                    )}
-                  </td>
+          {/* Factor Detail Table */}
+          <div className="overflow-x-auto rounded border border-slate-200">
+            <table className="w-full text-left text-xs font-mono tabular-nums">
+              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 uppercase text-xs tracking-wider font-semibold">
+                <tr>
+                  <th className="py-2.5 px-3">Factor Model Name</th>
+                  <th className="py-2.5 px-3 text-right">Portfolio Loading</th>
+                  <th className="py-2.5 px-3 text-right">Benchmark Loading</th>
+                  <th className="py-2.5 px-3 text-right">Active Exposure</th>
+                  <th className="py-2.5 px-3 text-right">T-Statistic</th>
+                  <th className="py-2.5 px-3 text-right">60-Day SD</th>
+                  <th className="py-2.5 px-3">Watchdog Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {factors.map((f, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-2 px-3 font-sans">
+                      <div className="font-semibold text-slate-900 text-sm">{f.factor}</div>
+                      <div className="text-xs text-slate-500">{f.description}</div>
+                    </td>
+                    <td className="py-2 px-3 text-right font-bold text-slate-900 text-sm">{f.loading}</td>
+                    <td className="py-2 px-3 text-right text-slate-600">{f.benchmarkLoading}</td>
+                    <td className={`py-2 px-3 text-right font-medium ${f.activeExposure >= 0 ? 'text-slate-900' : 'text-slate-600'}`}>
+                      {f.activeExposure >= 0 ? '+' : ''}{f.activeExposure.toFixed(2)}
+                    </td>
+                    <td className="py-2 px-3 text-right text-slate-700">{f.tStat.toFixed(2)}</td>
+                    <td className={`py-2 px-3 text-right font-semibold ${Math.abs(f.standardDeviations60d) > 2 ? 'text-rose-700' : 'text-slate-700'}`}>
+                      {f.standardDeviations60d > 0 ? '+' : ''}{f.standardDeviations60d} SD
+                    </td>
+                    <td className="py-2 px-3 font-sans">
+                      {f.driftAlert ? (
+                        <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-rose-50 text-rose-800 border border-rose-300 flex items-center space-x-1 w-max">
+                          <AlertTriangle className="w-3 h-3 text-rose-700" />
+                          <span>DRIFT ALERT</span>
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-600 border border-slate-200">
+                          NORMAL
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      {/* Stress Scenarios & Crisis Historical Simulations */}
-      <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-slate-200 mb-1">Historical Crisis Stress Scenarios</h3>
-        <p className="text-xs text-slate-400 font-mono mb-4">
-          Precomputed Monte Carlo replay applying historical dislocation returns and covariance spikes.
-        </p>
+      {/* 4. Macroeconomic Crisis Stress Testing Matrix */}
+      <div className="bg-institutional-panel border border-institutional-border rounded overflow-hidden shadow-xs">
+        <div className="px-3.5 py-2.5 border-b border-institutional-border bg-slate-50/70">
+          <h3 className="text-sm font-semibold text-slate-800">Historical Dislocation & Crisis Stress Replay</h3>
+          <p className="text-xs text-slate-500">
+            Parametric replay applying historical dislocation return shocks and covariance spike matrices.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* 2008 Lehman GFC */}
-          <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl space-y-2">
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-300">2008 Global Financial Crisis</span>
-              <span className="text-[10px] font-mono text-rose-400 bg-rose-950/60 px-1.5 py-0.5 rounded">Severe Stress</span>
+              <span className="font-semibold text-slate-900 text-sm">2008 Global Financial Crisis</span>
+              <span className="text-xs font-mono text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-300">Severe Shock</span>
             </div>
-            <div className="text-2xl font-bold font-mono text-rose-400">
+            <div className="text-xl font-bold font-mono text-rose-700 tabular-nums">
               {selectedPortfolio.riskMetrics.stressCrisis2008Drawdown}%
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              Liquidity freeze scenario with high cross-asset correlation spike and equity market decline of -38%.
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">
+              Liquidity freeze scenario with cross-asset correlation spike and equity decline of -38%.
             </p>
           </div>
 
-          {/* 2020 COVID Liquidity Shock */}
-          <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl space-y-2">
+          {/* 2020 COVID Flash Crash */}
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-300">2020 COVID-19 Flash Crash</span>
-              <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded">High Volatility</span>
+              <span className="font-semibold text-slate-900 text-sm">2020 COVID-19 Liquidity Shock</span>
+              <span className="text-xs font-mono text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">High Volatility</span>
             </div>
-            <div className="text-2xl font-bold font-mono text-amber-400">
+            <div className="text-xl font-bold font-mono text-amber-700 tabular-nums">
               {selectedPortfolio.riskMetrics.stressCovid2020Drawdown}%
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">
               Rapid volatility jump to VIX 82 with sharp rotation between high-beta cyclicals and defensive quality.
             </p>
           </div>
 
           {/* 2022 Fed Rate Hike Cycle */}
-          <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl space-y-2">
+          <div className="bg-slate-50 border border-slate-200 p-3 rounded space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-300">2022 Rapid Rate Hike Cycle</span>
-              <span className="text-[10px] font-mono text-blue-400 bg-blue-950/60 px-1.5 py-0.5 rounded">Duration Shock</span>
+              <span className="font-semibold text-slate-900 text-sm">2022 Rate Hike Cycle</span>
+              <span className="text-xs font-mono text-slate-700 bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">Duration Shock</span>
             </div>
-            <div className="text-2xl font-bold font-mono text-blue-400">
+            <div className="text-xl font-bold font-mono text-slate-800 tabular-nums">
               {selectedPortfolio.riskMetrics.stressRateHike2022Drawdown}%
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              Persistent inflation shock with simultaneous equity valuation multiple compression and bond yields spike.
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">
+              Persistent inflation shock with simultaneous equity multiple compression and bond yield spikes.
             </p>
           </div>
         </div>

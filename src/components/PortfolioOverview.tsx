@@ -2,17 +2,14 @@ import React, { useState } from 'react';
 import {
   TrendingUp,
   DollarSign,
+  Clock,
   ShieldAlert,
-  BarChart2,
-  PieChart as PieIcon,
   ArrowUpRight,
   ArrowDownRight,
-  Clock,
-  Compass,
-  AlertTriangle,
   ChevronRight,
-  PlusCircle,
-  Wallet
+  Wallet,
+  Search,
+  SlidersHorizontal
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -27,6 +24,7 @@ import {
   Cell
 } from 'recharts';
 import { useAlphaGen } from '../context/AlphaGenContext';
+import { useTheme } from '../context/ThemeContext';
 import { PaymentGatewayModal } from './PaymentGatewayModal';
 
 interface PortfolioOverviewProps {
@@ -35,15 +33,19 @@ interface PortfolioOverviewProps {
   onNavigateToSimulations: () => void;
 }
 
-const SECTOR_COLORS = ['#06b6d4', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#64748b', '#0284c7'];
+const SECTOR_COLORS_WORKSTATION = [
+  '#1e40af', '#2563eb', '#0284c7', '#0f766e', '#16a34a', '#d97706', '#475569', '#64748b'
+];
 
 export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   onNavigateToStrategies,
-  onNavigateToRisk,
-  onNavigateToSimulations
+  onNavigateToRisk
 }) => {
+  const { isLight } = useTheme();
   const { selectedPortfolio, sectorExposures, proposals, depositFunds } = useAlphaGen();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [holdingSearch, setHoldingSearch] = useState('');
+  const [holdingSortBy, setHoldingSortBy] = useState<'weight' | 'marketValue' | 'unrealizedPnL'>('weight');
 
   const activeSectors = sectorExposures[selectedPortfolio.id] || [];
   const pendingProposals = proposals.filter(p => p.portfolioId === selectedPortfolio.id && p.status === 'pending');
@@ -55,198 +57,177 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
     return `$${val.toLocaleString()}`;
   };
 
+  const filteredHoldings = selectedPortfolio.holdings
+    .filter(h =>
+      h.symbol.toLowerCase().includes(holdingSearch.toLowerCase()) ||
+      h.name.toLowerCase().includes(holdingSearch.toLowerCase()) ||
+      h.sector.toLowerCase().includes(holdingSearch.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (holdingSortBy === 'weight') return b.weight - a.weight;
+      if (holdingSortBy === 'marketValue') return b.marketValue - a.marketValue;
+      if (holdingSortBy === 'unrealizedPnL') return b.unrealizedPnL - a.unrealizedPnL;
+      return 0;
+    });
+
   return (
-    <div className="space-y-6">
-      {/* Mandate Hero Header */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="space-y-3">
+      {/* 1. Compact Horizontal Summary Strip (FactSet Portfolio Analytics style) */}
+      <div className="bg-institutional-panel border border-institutional-border rounded p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+        {/* AUM & Cash */}
+        <div className="flex items-center space-x-3 pr-3 border-r border-institutional-border">
           <div>
-            <div className="flex items-center space-x-3 mb-1">
-              <span className="font-mono text-cyan-400 font-semibold text-xs tracking-wider uppercase bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
-                {selectedPortfolio.code}
-              </span>
-              <span className="text-xs text-slate-400 font-mono">Benchmark: {selectedPortfolio.benchmark}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-mono font-medium capitalize bg-slate-800 text-slate-300 border border-slate-700">
-                Regime: <span className="text-cyan-400">{selectedPortfolio.currentRegime.replace('_', ' ')}</span>
-              </span>
-            </div>
-            <h2 className="text-xl font-bold text-slate-100">{selectedPortfolio.name}</h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">{selectedPortfolio.mandate}</p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {pendingProposals.length > 0 && (
-              <button
-                onClick={onNavigateToStrategies}
-                className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-md shadow-cyan-950/50 transition-all cursor-pointer"
-              >
-                <span>Review {pendingProposals.length} Pending Proposal{pendingProposals.length > 1 ? 's' : ''}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={() => setIsDepositOpen(true)}
-              className="flex items-center space-x-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Deposit Margin</span>
-            </button>
-            <button
-              onClick={onNavigateToRisk}
-              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Factor Risks</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total AUM */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Total Portfolio AUM</span>
-              <DollarSign className="w-4 h-4 text-slate-500" />
-            </div>
-            <div className="text-2xl font-bold text-slate-100 font-mono">
+            <div className="text-xs uppercase font-mono text-slate-500 font-semibold tracking-wider">Portfolio AUM</div>
+            <div className="font-mono font-bold text-base text-slate-900 tabular-nums">
               {formatCurrency(selectedPortfolio.aum)}
             </div>
-            <div className="flex items-center space-x-2 mt-2 text-xs">
-              <span className="text-slate-400">Cash Buffer:</span>
-              <span className="font-mono text-slate-300 font-medium">
-                {formatCurrency(selectedPortfolio.cashBalance)} ({((selectedPortfolio.cashBalance / selectedPortfolio.aum) * 100).toFixed(1)}%)
-              </span>
-            </div>
           </div>
-          <button
-            onClick={() => setIsDepositOpen(true)}
-            className="mt-3 w-full py-1.5 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center justify-center space-x-1.5 transition-colors"
-          >
-            <Wallet className="w-3.5 h-3.5" />
-            <span>Deposit Margin Funds</span>
-          </button>
+          <div className="text-xs font-mono text-slate-600">
+            <div>Cash: <span className="font-semibold text-slate-800 tabular-nums">{formatCurrency(selectedPortfolio.cashBalance)}</span></div>
+            <div className="text-xs text-slate-500">({((selectedPortfolio.cashBalance / selectedPortfolio.aum) * 100).toFixed(1)}% buffer)</div>
+          </div>
         </div>
 
         {/* Daily P&L */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>Daily P&L (Continuous Tick)</span>
-            <Clock className="w-4 h-4 text-slate-500" />
-          </div>
-          <div className="flex items-baseline space-x-2">
-            <span className={`text-2xl font-bold font-mono ${selectedPortfolio.dailyPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+        <div className="pr-3 border-r border-institutional-border">
+          <div className="text-xs uppercase font-mono text-slate-500 font-semibold tracking-wider">Daily P&L</div>
+          <div className="flex items-center space-x-1.5 font-mono">
+            <span className={`font-bold text-base tabular-nums ${selectedPortfolio.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
               {selectedPortfolio.dailyPnL >= 0 ? '+' : ''}{formatCurrency(selectedPortfolio.dailyPnL)}
             </span>
-          </div>
-          <div className="flex items-center space-x-1.5 mt-2 text-xs">
-            <span className={`flex items-center font-semibold font-mono ${selectedPortfolio.dailyPnLPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {selectedPortfolio.dailyPnLPercent >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-              {selectedPortfolio.dailyPnLPercent >= 0 ? '+' : ''}{selectedPortfolio.dailyPnLPercent}%
+            <span className={`text-xs font-semibold tabular-nums ${selectedPortfolio.dailyPnLPercent >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              ({selectedPortfolio.dailyPnLPercent >= 0 ? '+' : ''}{selectedPortfolio.dailyPnLPercent}%)
             </span>
-            <span className="text-slate-500">vs Benchmark</span>
           </div>
         </div>
 
-        {/* Total Cumulative P&L / YTD */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>Cumulative Total P&L</span>
-            <TrendingUp className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="text-2xl font-bold text-slate-100 font-mono">
-            +{formatCurrency(selectedPortfolio.totalPnL)}
-          </div>
-          <div className="flex items-center space-x-3 mt-2 text-xs font-mono">
-            <span className="text-emerald-400 font-semibold">+{selectedPortfolio.totalPnLPercent}% Inception</span>
-            <span className="text-slate-400">YTD: <strong className="text-slate-200">+{selectedPortfolio.ytdReturn}%</strong></span>
+        {/* Cumulative Total P&L & YTD */}
+        <div className="pr-3 border-r border-institutional-border">
+          <div className="text-xs uppercase font-mono text-slate-500 font-semibold tracking-wider">Cumulative Total P&L</div>
+          <div className="flex items-center space-x-2 font-mono">
+            <span className="font-bold text-base text-slate-900 tabular-nums">
+              +{formatCurrency(selectedPortfolio.totalPnL)}
+            </span>
+            <span className="text-emerald-700 font-semibold text-xs tabular-nums">
+              (+{selectedPortfolio.totalPnLPercent}% Inc.)
+            </span>
+            <span className="text-xs text-slate-500">
+              YTD: <strong className="text-slate-800 tabular-nums">+{selectedPortfolio.ytdReturn}%</strong>
+            </span>
           </div>
         </div>
 
-        {/* Risk Metrics Preview (VaR 99% / Sharpe) */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>Risk Profile (Numba MC)</span>
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
+        {/* Risk Profile Overview */}
+        <div className="pr-3 border-r border-institutional-border hidden xl:block">
+          <div className="text-xs uppercase font-mono text-slate-500 font-semibold tracking-wider">Risk Profile</div>
+          <div className="flex items-center space-x-3 font-mono text-xs">
+            <span>Sharpe: <strong className="text-slate-900 tabular-nums">{selectedPortfolio.riskMetrics.sharpeRatio}</strong></span>
+            <span>VaR 99%: <strong className="text-rose-700 tabular-nums">{selectedPortfolio.riskMetrics.var99}%</strong></span>
+            <span>Max DD: <strong className="text-slate-700 tabular-nums">{selectedPortfolio.riskMetrics.maxDrawdownHistorical}%</strong></span>
+            <span>Target Vol: <strong className="text-slate-700 tabular-nums">{selectedPortfolio.targetVolatility}%</strong></span>
           </div>
-          <div className="flex items-baseline justify-between">
-            <div>
-              <span className="text-xs text-slate-400">Sharpe: </span>
-              <span className="text-xl font-bold font-mono text-cyan-400">{selectedPortfolio.riskMetrics.sharpeRatio}</span>
-            </div>
-            <div>
-              <span className="text-xs text-slate-400">VaR 99%: </span>
-              <span className="text-xl font-bold font-mono text-rose-400">{selectedPortfolio.riskMetrics.var99}%</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-slate-400 font-mono">
-            <span>Hist Max DD: <strong className="text-slate-200">{selectedPortfolio.riskMetrics.maxDrawdownHistorical}%</strong></span>
-            <span>Target Vol: <strong className="text-slate-200">{selectedPortfolio.targetVolatility}%</strong></span>
-          </div>
+        </div>
+
+        {/* Quick Toolbar Actions */}
+        <div className="flex items-center space-x-2 shrink-0">
+          {pendingProposals.length > 0 && (
+            <button
+              onClick={onNavigateToStrategies}
+              className="px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer"
+              title="Review pending proposals"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+              <span>{pendingProposals.length} Pending Proposal{pendingProposals.length > 1 ? 's' : ''}</span>
+            </button>
+          )}
+          <button
+            onClick={() => setIsDepositOpen(true)}
+            className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+          >
+            <Wallet className="w-3.5 h-3.5 text-slate-500" />
+            <span>Deposit Margin</span>
+          </button>
+          <button
+            onClick={onNavigateToRisk}
+            className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-slate-500" />
+            <span>Factor Risk</span>
+          </button>
         </div>
       </div>
 
-      {/* Historical Performance Chart & Asset Allocation */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Performance Chart */}
-        <div className="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
+      {/* 2. Side-by-Side 2-Column Analytical Panels: Performance Chart & Sector Allocation */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Left Column: Benchmark-Performance Chart (col-span-7) */}
+        <div className="lg:col-span-7 bg-institutional-panel border border-institutional-border rounded overflow-hidden shadow-xs flex flex-col justify-between">
+          <div className="px-3.5 py-2.5 border-b border-institutional-border flex items-center justify-between bg-slate-50/70">
             <div>
-              <h3 className="text-sm font-semibold text-slate-200">Portfolio Performance vs Benchmark</h3>
-              <p className="text-xs text-slate-400 font-mono">Rebased to inception 2024 (USD) with drawdown overlays</p>
+              <h3 className="text-sm font-semibold text-slate-800">Benchmark-Relative Cumulative Performance</h3>
+              <p className="text-xs text-slate-500 font-sans">Indexed to 2024 inception (USD) vs {selectedPortfolio.benchmark}</p>
             </div>
-            <div className="flex items-center space-x-4 text-xs font-mono">
+            <div className="flex items-center space-x-4 text-xs font-sans">
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-sm bg-cyan-500"></span>
-                <span className="text-slate-300">AlphaGen Strategy</span>
+                <span className="w-2.5 h-2.5 rounded-sm bg-blue-800"></span>
+                <span className="text-slate-800 font-medium">AlphaGen Strategy</span>
               </div>
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-sm bg-slate-600"></span>
-                <span className="text-slate-400">{selectedPortfolio.benchmark}</span>
+                <span className="w-2.5 h-0.5 bg-slate-500"></span>
+                <span className="text-slate-600 font-mono text-xs">{selectedPortfolio.benchmark}</span>
               </div>
             </div>
           </div>
 
-          <div className="h-64 w-full">
+          <div className="p-3 h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={selectedPortfolio.historicalPerformance} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorPort" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.35}/>
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0}/>
+                  <linearGradient id="colorPortWorkstation" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1e40af" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#1e40af" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 10, fontFamily: 'monospace' }} />
                 <YAxis
                   stroke="#64748b"
-                  tick={{ fontSize: 11, fontFamily: 'monospace' }}
+                  tick={{ fontSize: 10, fontFamily: 'monospace' }}
                   tickFormatter={(val) => `$${(val / 1e9).toFixed(1)}B`}
                   domain={['dataMin - 100000000', 'dataMax + 100000000']}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#cbd5e1',
+                    color: '#0f172a',
+                    borderRadius: '3px',
+                    fontSize: '11px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}
                   formatter={(val: any) => [`$${(val / 1e9).toFixed(3)}B`, 'Value']}
                 />
-                <Area type="monotone" dataKey="portfolioValue" name="AlphaGen" stroke="#06b6d4" strokeWidth={2.5} fillOpacity={1} fill="url(#colorPort)" />
-                <Area type="monotone" dataKey="benchmarkValue" name="Benchmark" stroke="#64748b" strokeWidth={1.5} strokeDasharray="4 4" fill="none" />
+                <Area type="monotone" dataKey="portfolioValue" name="AlphaGen" stroke="#1e40af" strokeWidth={1.75} fillOpacity={1} fill="url(#colorPortWorkstation)" />
+                <Area type="monotone" dataKey="benchmarkValue" name="Benchmark" stroke="#64748b" strokeWidth={1.25} strokeDasharray="4 4" fill="none" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Sector Allocation Breakdown */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-200">Sector & Asset Breakdown</h3>
-              <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
-                Active Weights
-              </span>
+        {/* Right Column: Sector & Asset Allocation (col-span-5) */}
+        <div className="lg:col-span-5 bg-institutional-panel border border-institutional-border rounded overflow-hidden shadow-xs flex flex-col justify-between">
+          <div className="px-3.5 py-2.5 border-b border-institutional-border flex items-center justify-between bg-slate-50/70">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800">Sector Allocation Breakdown</h3>
+              <p className="text-xs text-slate-500 font-sans">Active sector weights relative to benchmark</p>
             </div>
-            <div className="h-44 w-full">
+            <span className="text-xs font-mono text-slate-600 bg-white border border-slate-300 px-1.5 py-0.5 rounded">
+              Active Weights
+            </span>
+          </div>
+
+          <div className="p-3 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+            {/* Donut Chart */}
+            <div className="sm:col-span-5 h-44 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -255,103 +236,140 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                     nameKey="sector"
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
-                    paddingAngle={3}
+                    innerRadius={40}
+                    outerRadius={65}
+                    paddingAngle={1.5}
                   >
                     {activeSectors.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={SECTOR_COLORS[index % SECTOR_COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={SECTOR_COLORS_WORKSTATION[index % SECTOR_COLORS_WORKSTATION.length]} />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '11px' }}
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderColor: '#cbd5e1',
+                      color: '#0f172a',
+                      borderRadius: '3px',
+                      fontSize: '12px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                    }}
                     formatter={(val: any) => [`${val}%`, 'Weight']}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-          </div>
 
-          <div className="space-y-1.5 mt-2 max-h-36 overflow-y-auto pr-1">
-            {activeSectors.slice(0, 5).map((sec, idx) => (
-              <div key={sec.sector} className="flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-2 truncate pr-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: SECTOR_COLORS[idx % SECTOR_COLORS.length] }}></span>
-                  <span className="text-slate-300 truncate">{sec.sector}</span>
+            {/* Dense Sector Weight Table */}
+            <div className="sm:col-span-7 space-y-1.5 overflow-y-auto max-h-44 pr-1 text-xs">
+              {activeSectors.slice(0, 6).map((sec, idx) => (
+                <div key={sec.sector} className="flex items-center justify-between py-0.5 border-b border-slate-100 last:border-b-0">
+                  <div className="flex items-center space-x-1.5 truncate pr-2">
+                    <span className="w-2 h-2 rounded-xs shrink-0" style={{ backgroundColor: SECTOR_COLORS_WORKSTATION[idx % SECTOR_COLORS_WORKSTATION.length] }}></span>
+                    <span className="text-slate-700 truncate font-medium text-xs">{sec.sector}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 font-mono shrink-0 tabular-nums text-xs">
+                    <span className="text-slate-900 font-semibold">{sec.weight.toFixed(1)}%</span>
+                    <span className={`text-xs ${sec.activeWeight >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      ({sec.activeWeight >= 0 ? '+' : ''}{sec.activeWeight.toFixed(1)}%)
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2 font-mono shrink-0">
-                  <span className="text-slate-200 font-medium">{sec.weight}%</span>
-                  <span className={`text-[10px] ${sec.activeWeight >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    ({sec.activeWeight >= 0 ? '+' : ''}{sec.activeWeight}%)
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Current Positions Table */}
-      <div className="bg-slate-900/70 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+      {/* 3. Full-Width Holdings Table */}
+      <div className="bg-institutional-panel border border-institutional-border rounded overflow-hidden shadow-xs">
+        <div className="px-3.5 py-2.5 border-b border-institutional-border flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
           <div>
-            <h3 className="text-sm font-semibold text-slate-200">Current Portfolio Holdings & Positions</h3>
-            <p className="text-xs text-slate-400 font-mono">Simulated multi-asset valuation calibrated to case-study sample pricing (Illustrative Data)</p>
+            <h3 className="text-sm font-semibold text-slate-800">Portfolio Holdings & Position Exposures</h3>
+            <p className="text-xs text-slate-500 font-sans">Positions priced against real-time composite settlement marks</p>
           </div>
-          <span className="text-xs font-mono text-slate-400 bg-slate-800 px-2.5 py-1 rounded">
-            {selectedPortfolio.holdings.length} Positions (Simulated)
-          </span>
+
+          <div className="flex items-center space-x-2">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search symbol, company, sector..."
+                value={holdingSearch}
+                onChange={(e) => setHoldingSearch(e.target.value)}
+                className="pl-7 pr-2.5 py-1 text-xs bg-white border border-slate-300 rounded text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-700 w-48 sm:w-60"
+              />
+            </div>
+
+            {/* Sort Selector */}
+            <div className="flex items-center space-x-1 text-xs font-mono">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                value={holdingSortBy}
+                onChange={(e) => setHoldingSortBy(e.target.value as any)}
+                className="bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-700 cursor-pointer"
+              >
+                <option value="weight">Sort by Weight</option>
+                <option value="marketValue">Sort by Value</option>
+                <option value="unrealizedPnL">Sort by Unrealized P&L</option>
+              </select>
+            </div>
+
+            <span className="text-xs font-mono text-slate-600 bg-white border border-slate-300 px-2 py-0.5 rounded">
+              {filteredHoldings.length} / {selectedPortfolio.holdings.length} Positions
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/60 text-slate-400 font-mono border-b border-slate-800 uppercase text-[11px]">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-100/80 border-b border-institutional-border text-xs font-semibold text-slate-600 uppercase tracking-wider">
               <tr>
-                <th className="py-3 px-4">Instrument / Ticker</th>
-                <th className="py-3 px-4">Asset Class & Sector</th>
-                <th className="py-3 px-4 text-right">Quantity</th>
-                <th className="py-3 px-4 text-right">Avg Cost</th>
-                <th className="py-3 px-4 text-right">Current Price</th>
-                <th className="py-3 px-4 text-right">Market Value</th>
-                <th className="py-3 px-4 text-right">Weight</th>
-                <th className="py-3 px-4 text-right">Daily %</th>
-                <th className="py-3 px-4 text-right">Unrealized P&L</th>
+                <th className="py-2.5 px-3">Symbol / Asset</th>
+                <th className="py-2.5 px-3">Sector</th>
+                <th className="py-2.5 px-3 text-right">Shares / Qty</th>
+                <th className="py-2.5 px-3 text-right">Avg Cost</th>
+                <th className="py-2.5 px-3 text-right">Mark Price</th>
+                <th className="py-2.5 px-3 text-right">Market Value</th>
+                <th className="py-2.5 px-3 text-right">Weight</th>
+                <th className="py-2.5 px-3 text-right">Day Chg</th>
+                <th className="py-2.5 px-3 text-right">Unrealized P&L</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
-              {selectedPortfolio.holdings.map((h) => (
-                <tr key={h.id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3 px-4 font-sans">
-                    <div className="font-bold text-slate-100 font-mono">{h.symbol}</div>
-                    <div className="text-[11px] text-slate-400 truncate max-w-xs">{h.name}</div>
+            <tbody className="divide-y divide-slate-100 font-mono text-xs tabular-nums">
+              {filteredHoldings.map((h) => (
+                <tr key={h.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-2 px-3 font-sans">
+                    <div className="font-semibold text-slate-900 font-mono text-sm">{h.symbol}</div>
+                    <div className="text-xs text-slate-500 truncate max-w-xs">{h.name}</div>
                   </td>
-                  <td className="py-3 px-4">
-                    <span className="text-slate-300 font-sans">{h.assetClass}</span>
-                    <div className="text-[10px] text-slate-500 font-sans">{h.sector}</div>
+                  <td className="py-2 px-3">
+                    <span className="text-slate-700 font-sans text-xs">{h.sector}</span>
+                    <div className="text-xs text-slate-500 font-sans">{h.assetClass}</div>
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-300">
+                  <td className="py-2 px-3 text-right text-slate-700">
                     {h.quantity.toLocaleString()}
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-400">
+                  <td className="py-2 px-3 text-right text-slate-600">
                     ${h.avgCost.toFixed(2)}
                   </td>
-                  <td className="py-3 px-4 text-right font-medium text-slate-200">
+                  <td className="py-2 px-3 text-right font-medium text-slate-800">
                     ${h.currentPrice.toFixed(2)}
                   </td>
-                  <td className="py-3 px-4 text-right font-semibold text-slate-100">
+                  <td className="py-2 px-3 text-right font-semibold text-slate-900">
                     {formatCurrency(h.marketValue)}
                   </td>
-                  <td className="py-3 px-4 text-right font-bold text-cyan-400">
+                  <td className="py-2 px-3 text-right font-bold text-slate-900">
                     {h.weight.toFixed(2)}%
                   </td>
-                  <td className={`py-3 px-4 text-right font-medium ${h.dailyReturn >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <td className={`py-2 px-3 text-right font-medium ${h.dailyReturn >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {h.dailyReturn >= 0 ? '+' : ''}{h.dailyReturn}%
                   </td>
-                  <td className="py-3 px-4 text-right">
-                    <div className={`font-semibold ${h.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <td className="py-2 px-3 text-right">
+                    <div className={`font-semibold ${h.unrealizedPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {h.unrealizedPnL >= 0 ? '+' : ''}{formatCurrency(h.unrealizedPnL)}
                     </div>
-                    <div className={`text-[10px] ${h.unrealizedPnLPercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <div className={`text-xs ${h.unrealizedPnLPercent >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {h.unrealizedPnLPercent >= 0 ? '+' : ''}{h.unrealizedPnLPercent.toFixed(2)}%
                     </div>
                   </td>
@@ -362,7 +380,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
         </div>
       </div>
 
-      {/* Razorpay / Institutional Settlement Simulation Modal */}
+      {/* Institutional Settlement Dialog */}
       {isDepositOpen && (
         <PaymentGatewayModal
           portfolio={selectedPortfolio}
